@@ -171,6 +171,7 @@ export function useAppState() {
     return newProposal;
   }, [checkLaw1Violations]);
 
+
   // RCV Voting Actions
   const submitBallot = useCallback((submission: Omit<BallotSubmission, 'submittedAt'>) => {
     setState(prev => {
