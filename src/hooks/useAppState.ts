@@ -1,0 +1,387 @@
+import { useState, useCallback } from 'react';
+import type {
+  AppState,
+  PageRoute,
+  VerificationStep,
+  VouchToken,
+  Proposal,
+  BallotOption,
+  BallotSubmission,
+  RCVResult,
+  RCVRound,
+} from '../types';
+import {
+  INITIAL_IDENTITY,
+  INITIAL_BALLOT_OPTIONS,
+  MOCK_TEST_ACCOUNTS,
+  MOCK_VOUCH_TOKENS,
+  MOCK_CALENDAR_EVENTS,
+  PROTOCOL_RULES,
+} from '../data/mockData';
+
+const initialState: AppState = {
+  currentPage: '/dashboard',
+  identity: INITIAL_IDENTITY,
+  proposals: [],
+  ballotOptions: INITIAL_BALLOT_OPTIONS,
+  ballotSubmissions: [],
+  testAccounts: MOCK_TEST_ACCOUNTS,
+  rcvResult: null,
+  calendarEvents: MOCK_CALENDAR_EVENTS,
+};
+
+export function useAppState() {
+  const [state, setState] = useState<AppState>(initialState);
+
+  const setCurrentPage = useCallback((page: PageRoute) => {
+    setState(prev => ({ ...prev, currentPage: page }));
+  }, []);
+
+  // Identity Actions
+  const completeVerificationStep = useCallback((step: VerificationStep) => {
+    setState(prev => {
+      const newIdentity = { ...prev.identity };
+
+      switch (step) {
+        case 'passport':
+          newIdentity.passportVerified = true;
+          newIdentity.verificationStep = 'utility';
+          break;
+        case 'utility':
+          newIdentity.utilityVerified = true;
+          newIdentity.verificationStep = 'vouching';
+          break;
+        case 'vouching':
+          newIdentity.vouchTokens = MOCK_VOUCH_TOKENS;
+          newIdentity.verificationStep = 'complete';
+          newIdentity.status = 'active';
+          break;
+      }
+
+      return { ...prev, identity: newIdentity };
+    });
+  }, []);
+
+  const addVouchToken = useCallback((token: VouchToken) => {
+    setState(prev => {
+      const newTokens = [...prev.identity.vouchTokens, token];
+      const isComplete = newTokens.length >= 3;
+      return {
+        ...prev,
+        identity: {
+          ...prev.identity,
+          vouchTokens: newTokens,
+          verificationStep: isComplete ? 'complete' : 'vouching',
+          status: isComplete ? 'active' : 'pending',
+        },
+      };
+    });
+  }, []);
+
+  const triggerFraudStrike = useCallback((reason: string) => {
+    setState(prev => {
+      const newStrikes = prev.identity.fraudStrikes + 1;
+      const shouldFreeze = newStrikes >= 2;
+      const shouldDeactivate = newStrikes >= 3;
+
+      return {
+        ...prev,
+        identity: {
+          ...prev.identity,
+          fraudStrikes: newStrikes,
+          status: shouldDeactivate ? 'deactivated' : shouldFreeze ? 'frozen' : prev.identity.status,
+          frozenAt: shouldFreeze ? new Date() : undefined,
+          frozenReason: shouldFreeze ? reason : undefined,
+        },
+      };
+    });
+  }, []);
+
+  const freezeAccount = useCallback((reason: string) => {
+    setState(prev => ({
+      ...prev,
+      identity: {
+        ...prev.identity,
+        status: 'frozen',
+        frozenAt: new Date(),
+        frozenReason: reason,
+        fraudStrikes: 3,
+      },
+    }));
+  }, []);
+
+  const resetIdentity = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      identity: INITIAL_IDENTITY,
+    }));
+  }, []);
+
+  // Proposal Compiler Actions
+  const submitProposal = useCallback((proposal: Omit<Proposal, 'id' | 'submittedAt' | 'status'>) => {
+    const violations = checkLaw1Violations(proposal.content);
+    const status = violations.length > 0 ? 'vetoed' : 'compiled';
+
+    const newProposal: Proposal = {
+      id: `prop-${Date.now()}`,
+      ...proposal,
+      submittedAt: new Date(),
+      status,
+      vetoReason: violations.length > 0 ? violations.join('; ') : undefined,
+      triggeredKeywords: violations.length > 0 ? violations : undefined,
+    };
+
+    setState(prev => ({
+      ...prev,
+      proposals: [...prev.proposals, newProposal],
+    }));
+
+    return newProposal;
+  }, []);
+
+  const checkLaw1Violations = useCallback((content: string): string[] => {
+    const violations: string[] = [];
+    const lowerContent = content.toLowerCase();
+
+    PROTOCOL_RULES.filter(rule => rule.law === 1).forEach(rule => {
+      rule.keywords.forEach(keyword => {
+        if (lowerContent.includes(keyword.toLowerCase())) {
+          violations.push(`${rule.name}: "${keyword}" detected`);
+        }
+      });
+    });
+
+    return violations;
+  }, []);
+
+  // RCV Voting Actions
+  const submitBallot = useCallback((submission: Omit<BallotSubmission, 'submittedAt'>) => {
+    setState(prev => {
+      const newSubmission: BallotSubmission = {
+        ...submission,
+        submittedAt: new Date(),
+      };
+
+      let newBallotOptions = [...prev.ballotOptions];
+
+      // Handle write-in
+      if (submission.writeIn) {
+        const existingWriteIn = newBallotOptions.find(
+          opt => opt.isWriteIn && opt.title.toLowerCase() === submission.writeIn!.toLowerCase()
+        );
+
+        if (existingWriteIn) {
+          existingWriteIn.writeInCount = (existingWriteIn.writeInCount || 0) + 1;
+        } else {
+          // Create new write-in option
+          const newWriteInOption: BallotOption = {
+            id: `writein-${Date.now()}`,
+            title: submission.writeIn,
+            description: 'Write-in candidate submitted by voters',
+            budget: 0,
+            category: 'other',
+            voteCount: 0,
+            isWriteIn: true,
+            writeInCount: 1,
+          };
+          newBallotOptions.push(newWriteInOption);
+        }
+      }
+
+      return {
+        ...prev,
+        ballotSubmissions: [...prev.ballotSubmissions, newSubmission],
+        ballotOptions: newBallotOptions,
+      };
+    });
+  }, []);
+
+  const runRCVSimulation = useCallback(() => {
+    setState(prev => {
+      const result = calculateRCVResult(prev.ballotOptions, prev.ballotSubmissions);
+      return { ...prev, rcvResult: result };
+    });
+  }, []);
+
+  const generateMockVotes = useCallback((count: number) => {
+    setState(prev => {
+      const accounts = [...prev.testAccounts];
+      const newSubmissions: BallotSubmission[] = [];
+
+      for (let i = 0; i < Math.min(count, accounts.length); i++) {
+        const account = accounts[i];
+        if (!account.hasVoted) {
+          // Generate random rankings
+          const shuffled = [...prev.ballotOptions].sort(() => Math.random() - 0.5);
+          const rankings = shuffled.slice(0, Math.floor(Math.random() * 4) + 1).map((opt, idx) => ({
+            optionId: opt.id,
+            rank: idx + 1,
+          }));
+
+          // Randomly add a write-in (10% chance)
+          const writeIn = Math.random() < 0.1 ? `Citizen Initiative #${Math.floor(Math.random() * 100)}` : undefined;
+
+          account.hasVoted = true;
+          if (writeIn) account.writeIns.push(writeIn);
+
+          newSubmissions.push({
+            voterId: account.id,
+            rankings,
+            writeIn,
+            submittedAt: new Date(),
+          });
+        }
+      }
+
+      // Update ballot options with write-ins
+      let newBallotOptions = [...prev.ballotOptions];
+      const writeInCounts: Record<string, number> = {};
+
+      newSubmissions.forEach(sub => {
+        if (sub.writeIn) {
+          writeInCounts[sub.writeIn] = (writeInCounts[sub.writeIn] || 0) + 1;
+        }
+      });
+
+      Object.entries(writeInCounts).forEach(([writeIn, count]) => {
+        const existing = newBallotOptions.find(
+          opt => opt.isWriteIn && opt.title.toLowerCase() === writeIn.toLowerCase()
+        );
+
+        if (existing) {
+          existing.writeInCount = (existing.writeInCount || 0) + count;
+        } else {
+          newBallotOptions.push({
+            id: `writein-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            title: writeIn,
+            description: 'Write-in candidate submitted by voters',
+            budget: 0,
+            category: 'other',
+            voteCount: 0,
+            isWriteIn: true,
+            writeInCount: count,
+          });
+        }
+      });
+
+      return {
+        ...prev,
+        testAccounts: accounts,
+        ballotSubmissions: [...prev.ballotSubmissions, ...newSubmissions],
+        ballotOptions: newBallotOptions,
+      };
+    });
+  }, []);
+
+  const resetVoting = useCallback(() => {
+    setState(prev => ({
+      ...prev,
+      ballotOptions: INITIAL_BALLOT_OPTIONS,
+      ballotSubmissions: [],
+      rcvResult: null,
+      testAccounts: MOCK_TEST_ACCOUNTS.map(acc => ({ ...acc, hasVoted: false, writeIns: [] })),
+    }));
+  }, []);
+
+  return {
+    state,
+    setCurrentPage,
+    // Identity
+    completeVerificationStep,
+    addVouchToken,
+    triggerFraudStrike,
+    freezeAccount,
+    resetIdentity,
+    // Proposals
+    submitProposal,
+    checkLaw1Violations,
+    // Voting
+    submitBallot,
+    runRCVSimulation,
+    generateMockVotes,
+    resetVoting,
+  };
+}
+
+function calculateRCVResult(
+  options: BallotOption[],
+  submissions: BallotSubmission[]
+): RCVResult {
+  const rounds: RCVRound[] = [];
+  let currentOptions = [...options];
+  let currentRankings = submissions.map(sub => [...sub.rankings].sort((a, b) => a.rank - b.rank));
+
+  const totalVotes = submissions.length;
+  const threshold = totalVotes / 2;
+
+  let roundNumber = 0;
+  let winner: BallotOption | undefined;
+
+  while (!winner && currentOptions.length > 1 && roundNumber < 10) {
+    roundNumber++;
+
+    // Count first-choice votes
+    const voteDistribution: Record<string, number> = {};
+    currentOptions.forEach(opt => {
+      voteDistribution[opt.id] = 0;
+    });
+
+    currentRankings.forEach(rankings => {
+      const firstChoice = rankings[0];
+      if (firstChoice && voteDistribution.hasOwnProperty(firstChoice.optionId)) {
+        voteDistribution[firstChoice.optionId]++;
+      }
+    });
+
+    // Check for winner
+    const maxVotes = Math.max(...Object.values(voteDistribution));
+    if (maxVotes > threshold) {
+      const winnerId = Object.keys(voteDistribution).find(
+        id => voteDistribution[id] === maxVotes
+      );
+      winner = currentOptions.find(opt => opt.id === winnerId);
+
+      rounds.push({
+        roundNumber,
+        voteDistribution,
+        threshold,
+        winner: winnerId,
+        totalVotes,
+      });
+      break;
+    }
+
+    // Find loser (minimum votes)
+    const minVotes = Math.min(...Object.values(voteDistribution));
+    const loserId = Object.keys(voteDistribution).find(
+      id => voteDistribution[id] === minVotes
+    );
+
+    // Eliminate loser
+    currentOptions = currentOptions.filter(opt => opt.id !== loserId);
+
+    // Redistribute votes
+    currentRankings = currentRankings.map(rankings =>
+      rankings.filter(r => currentOptions.some(opt => opt.id === r.optionId))
+    );
+
+    rounds.push({
+      roundNumber,
+      eliminatedOptionId: loserId,
+      voteDistribution,
+      threshold,
+      totalVotes,
+    });
+  }
+
+  if (!winner) {
+    winner = currentOptions[0];
+  }
+
+  return {
+    rounds,
+    winner: winner!,
+    totalVotes,
+    completedAt: new Date(),
+  };
+}
