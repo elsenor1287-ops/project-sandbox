@@ -117,6 +117,21 @@ export function useAppState() {
     }));
   }, []);
 
+  const checkLaw1Violations = useCallback((content: string): string[] => {
+    const violations: string[] = [];
+    const lowerContent = content.toLowerCase();
+
+    PROTOCOL_RULES.filter(rule => rule.law === 1).forEach(rule => {
+      rule.keywords.forEach(keyword => {
+        if (lowerContent.includes(keyword.toLowerCase())) {
+          violations.push(`${rule.name}: "${keyword}" detected`);
+        }
+      });
+    });
+
+    return violations;
+  }, []);
+
   // Proposal Compiler Actions
   const submitProposal = useCallback((proposal: Omit<Proposal, 'id' | 'submittedAt' | 'status'>) => {
     const violations = checkLaw1Violations(proposal.content);
@@ -137,22 +152,8 @@ export function useAppState() {
     }));
 
     return newProposal;
-  }, []);
+  }, [checkLaw1Violations]);
 
-  const checkLaw1Violations = useCallback((content: string): string[] => {
-    const violations: string[] = [];
-    const lowerContent = content.toLowerCase();
-
-    PROTOCOL_RULES.filter(rule => rule.law === 1).forEach(rule => {
-      rule.keywords.forEach(keyword => {
-        if (lowerContent.includes(keyword.toLowerCase())) {
-          violations.push(`${rule.name}: "${keyword}" detected`);
-        }
-      });
-    });
-
-    return violations;
-  }, []);
 
   // RCV Voting Actions
   const submitBallot = useCallback((submission: Omit<BallotSubmission, 'submittedAt'>) => {
@@ -162,7 +163,7 @@ export function useAppState() {
         submittedAt: new Date(),
       };
 
-      let newBallotOptions = [...prev.ballotOptions];
+      const newBallotOptions = [...prev.ballotOptions];
 
       // Handle write-in
       if (submission.writeIn) {
@@ -234,7 +235,7 @@ export function useAppState() {
       }
 
       // Update ballot options with write-ins
-      let newBallotOptions = [...prev.ballotOptions];
+      const newBallotOptions = [...prev.ballotOptions];
       const writeInCounts: Record<string, number> = {};
 
       newSubmissions.forEach(sub => {
@@ -328,7 +329,7 @@ function calculateRCVResult(
 
     currentRankings.forEach(rankings => {
       const firstChoice = rankings[0];
-      if (firstChoice && voteDistribution.hasOwnProperty(firstChoice.optionId)) {
+      if (firstChoice && Object.prototype.hasOwnProperty.call(voteDistribution, firstChoice.optionId)) {
         voteDistribution[firstChoice.optionId]++;
       }
     });

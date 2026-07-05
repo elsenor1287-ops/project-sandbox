@@ -465,7 +465,7 @@ function calculateRCVResult(
 
     currentRankings.forEach(rankings => {
       const firstChoice = rankings[0];
-      if (firstChoice && voteDistribution.hasOwnProperty(firstChoice.optionId)) {
+      if (firstChoice && Object.prototype.hasOwnProperty.call(voteDistribution, firstChoice.optionId)) {
         voteDistribution[firstChoice.optionId]++;
       }
     });
