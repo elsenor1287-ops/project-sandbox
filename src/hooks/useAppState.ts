@@ -162,7 +162,7 @@ export function useAppState() {
         submittedAt: new Date(),
       };
 
-      let newBallotOptions = [...prev.ballotOptions];
+      const newBallotOptions = [...prev.ballotOptions];
 
       // Handle write-in
       if (submission.writeIn) {
@@ -234,7 +234,7 @@ export function useAppState() {
       }
 
       // Update ballot options with write-ins
-      let newBallotOptions = [...prev.ballotOptions];
+      const newBallotOptions = [...prev.ballotOptions];
       const writeInCounts: Record<string, number> = {};
 
       newSubmissions.forEach(sub => {
@@ -328,7 +328,7 @@ function calculateRCVResult(
 
     currentRankings.forEach(rankings => {
       const firstChoice = rankings[0];
-      if (firstChoice && voteDistribution.hasOwnProperty(firstChoice.optionId)) {
+      if (firstChoice && Object.prototype.hasOwnProperty.call(voteDistribution, firstChoice.optionId)) {
         voteDistribution[firstChoice.optionId]++;
       }
     });
