@@ -13,12 +13,11 @@ import {
   AlertOctagon,
 } from 'lucide-react';
 import { useState } from 'react';
-import type { IdentityState, VerificationStep, VouchToken } from '../types';
+import type { IdentityState, VerificationStep } from '../types';
 
 interface IdentityPageProps {
   identity: IdentityState;
   onCompleteStep: (step: VerificationStep) => void;
-  onAddVouchToken: (token: VouchToken) => void;
   onTriggerFraud: (reason: string) => void;
   onFreezeAccount: (reason: string) => void;
   onResetIdentity: () => void;
