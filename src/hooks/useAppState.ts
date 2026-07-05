@@ -303,7 +303,7 @@ export function useAppState() {
   };
 }
 
-function calculateRCVResult(
+export function calculateRCVResult(
   options: BallotOption[],
   submissions: BallotSubmission[]
 ): RCVResult {
