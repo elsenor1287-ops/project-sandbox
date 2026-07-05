@@ -19,6 +19,8 @@ import {
   PROTOCOL_RULES,
 } from '../data/mockData';
 
+const LAW1_RULES = PROTOCOL_RULES.filter(rule => rule.law === 1);
+
 const initialState: AppState = {
   currentPage: '/dashboard',
   identity: INITIAL_IDENTITY,
@@ -118,6 +120,21 @@ export function useAppState() {
   }, []);
 
   // Proposal Compiler Actions
+  const checkLaw1Violations = useCallback((content: string): string[] => {
+    const violations: string[] = [];
+    const lowerContent = content.toLowerCase();
+
+    LAW1_RULES.forEach(rule => {
+      rule.keywords.forEach(keyword => {
+        if (lowerContent.includes(keyword.toLowerCase())) {
+          violations.push(`${rule.name}: "${keyword}" detected`);
+        }
+      });
+    });
+
+    return violations;
+  }, []);
+
   const submitProposal = useCallback((proposal: Omit<Proposal, 'id' | 'submittedAt' | 'status'>) => {
     const violations = checkLaw1Violations(proposal.content);
     const status = violations.length > 0 ? 'vetoed' : 'compiled';
@@ -137,22 +154,7 @@ export function useAppState() {
     }));
 
     return newProposal;
-  }, []);
-
-  const checkLaw1Violations = useCallback((content: string): string[] => {
-    const violations: string[] = [];
-    const lowerContent = content.toLowerCase();
-
-    PROTOCOL_RULES.filter(rule => rule.law === 1).forEach(rule => {
-      rule.keywords.forEach(keyword => {
-        if (lowerContent.includes(keyword.toLowerCase())) {
-          violations.push(`${rule.name}: "${keyword}" detected`);
-        }
-      });
-    });
-
-    return violations;
-  }, []);
+  }, [checkLaw1Violations]);
 
   // RCV Voting Actions
   const submitBallot = useCallback((submission: Omit<BallotSubmission, 'submittedAt'>) => {
@@ -162,7 +164,7 @@ export function useAppState() {
         submittedAt: new Date(),
       };
 
-      let newBallotOptions = [...prev.ballotOptions];
+      const newBallotOptions = [...prev.ballotOptions];
 
       // Handle write-in
       if (submission.writeIn) {
@@ -234,7 +236,7 @@ export function useAppState() {
       }
 
       // Update ballot options with write-ins
-      let newBallotOptions = [...prev.ballotOptions];
+      const newBallotOptions = [...prev.ballotOptions];
       const writeInCounts: Record<string, number> = {};
 
       newSubmissions.forEach(sub => {
