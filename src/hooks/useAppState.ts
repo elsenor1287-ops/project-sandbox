@@ -119,21 +119,6 @@ export function useAppState() {
     }));
   }, []);
 
-  const checkLaw1Violations = useCallback((content: string): string[] => {
-    const violations: string[] = [];
-    const lowerContent = content.toLowerCase();
-
-    PROTOCOL_RULES.filter(rule => rule.law === 1).forEach(rule => {
-      rule.keywords.forEach(keyword => {
-        if (lowerContent.includes(keyword.toLowerCase())) {
-          violations.push(`${rule.name}: "${keyword}" detected`);
-        }
-      });
-    });
-
-    return violations;
-  }, []);
-
   // Proposal Compiler Actions
   const checkLaw1Violations = useCallback((content: string): string[] => {
     const violations: string[] = [];
@@ -269,7 +254,7 @@ export function useAppState() {
           existing.writeInCount = (existing.writeInCount || 0) + count;
         } else {
           newBallotOptions.push({
-            id: `writein-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            id: `writein-${Date.now()}-${crypto.randomUUID()}`,
             title: writeIn,
             description: 'Write-in candidate submitted by voters',
             budget: 0,
