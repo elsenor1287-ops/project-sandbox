@@ -19,6 +19,8 @@ import {
   PROTOCOL_RULES,
 } from '../data/mockData';
 
+const LAW1_RULES = PROTOCOL_RULES.filter(rule => rule.law === 1);
+
 const initialState: AppState = {
   currentPage: '/dashboard',
   identity: INITIAL_IDENTITY,
@@ -133,6 +135,21 @@ export function useAppState() {
   }, []);
 
   // Proposal Compiler Actions
+  const checkLaw1Violations = useCallback((content: string): string[] => {
+    const violations: string[] = [];
+    const lowerContent = content.toLowerCase();
+
+    LAW1_RULES.forEach(rule => {
+      rule.keywords.forEach(keyword => {
+        if (lowerContent.includes(keyword.toLowerCase())) {
+          violations.push(`${rule.name}: "${keyword}" detected`);
+        }
+      });
+    });
+
+    return violations;
+  }, []);
+
   const submitProposal = useCallback((proposal: Omit<Proposal, 'id' | 'submittedAt' | 'status'>) => {
     const violations = checkLaw1Violations(proposal.content);
     const status = violations.length > 0 ? 'vetoed' : 'compiled';
@@ -304,7 +321,7 @@ export function useAppState() {
   };
 }
 
-function calculateRCVResult(
+export function calculateRCVResult(
   options: BallotOption[],
   submissions: BallotSubmission[]
 ): RCVResult {
@@ -334,12 +351,25 @@ function calculateRCVResult(
       }
     });
 
+    let maxVotes = -Infinity;
+    let minVotes = Infinity;
+    let winnerId: string | undefined;
+    let loserId: string | undefined;
+
+    for (const id in voteDistribution) {
+      const votes = voteDistribution[id];
+      if (votes > maxVotes) {
+        maxVotes = votes;
+        winnerId = id;
+      }
+      if (votes < minVotes) {
+        minVotes = votes;
+        loserId = id;
+      }
+    }
+
     // Check for winner
-    const maxVotes = Math.max(...Object.values(voteDistribution));
     if (maxVotes > threshold) {
-      const winnerId = Object.keys(voteDistribution).find(
-        id => voteDistribution[id] === maxVotes
-      );
       winner = currentOptions.find(opt => opt.id === winnerId);
 
       rounds.push({
@@ -352,18 +382,15 @@ function calculateRCVResult(
       break;
     }
 
-    // Find loser (minimum votes)
-    const minVotes = Math.min(...Object.values(voteDistribution));
-    const loserId = Object.keys(voteDistribution).find(
-      id => voteDistribution[id] === minVotes
-    );
-
     // Eliminate loser
     currentOptions = currentOptions.filter(opt => opt.id !== loserId);
 
+    // Optimization: Create a Set of current option IDs for O(1) lookup
+    const currentOptionIds = new Set(currentOptions.map(opt => opt.id));
+
     // Redistribute votes
     currentRankings = currentRankings.map(rankings =>
-      rankings.filter(r => currentOptions.some(opt => opt.id === r.optionId))
+      rankings.filter(r => currentOptionIds.has(r.optionId))
     );
 
     rounds.push({
