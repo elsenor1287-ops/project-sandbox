@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Vote,
   BarChart3,
@@ -46,6 +46,22 @@ export function VotingPage({
   const [showWriteInInput, setShowWriteInInput] = useState(false);
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulationRound, setSimulationRound] = useState(0);
+
+  const testAccountsMap = useMemo(() => {
+    const map = new Map<string, TestAccount>();
+    for (const acc of testAccounts) {
+      map.set(acc.id, acc);
+    }
+    return map;
+  }, [testAccounts]);
+
+  const ballotOptionsMap = useMemo(() => {
+    const map = new Map<string, BallotOption>();
+    for (const opt of ballotOptions) {
+      map.set(opt.id, opt);
+    }
+    return map;
+  }, [ballotOptions]);
 
   const handleSubmit = () => {
     onSubmitBallot({
@@ -412,7 +428,7 @@ export function VotingPage({
               </thead>
               <tbody className="text-sm">
                 {submissions.slice(-10).reverse().map((sub, idx) => {
-                  const voter = testAccounts.find(t => t.id === sub.voterId);
+                  const voter = testAccountsMap.get(sub.voterId);
                   return (
                     <tr key={idx} className="border-b border-primary-700/50">
                       <td className="py-3 text-primary-200">
@@ -420,7 +436,7 @@ export function VotingPage({
                       </td>
                       <td className="py-3 text-primary-300">
                         {sub.rankings.sort((a, b) => a.rank - b.rank).map(r => {
-                          const opt = ballotOptions.find(o => o.id === r.optionId);
+                          const opt = ballotOptionsMap.get(r.optionId);
                           return `${r.rank}: ${opt?.title || 'Unknown'}`;
                         }).join(' → ')}
                       </td>
@@ -465,7 +481,7 @@ function calculateRCVResult(
 
     currentRankings.forEach(rankings => {
       const firstChoice = rankings[0];
-      if (firstChoice && voteDistribution.hasOwnProperty(firstChoice.optionId)) {
+      if (firstChoice && Object.prototype.hasOwnProperty.call(voteDistribution, firstChoice.optionId)) {
         voteDistribution[firstChoice.optionId]++;
       }
     });
