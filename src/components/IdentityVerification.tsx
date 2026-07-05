@@ -12,6 +12,8 @@ import {
   RefreshCw,
   AlertOctagon,
 } from 'lucide-react';
+import React from 'react';
+import type { IdentityState, VerificationStep, VouchToken } from '../types';
 import { useState } from 'react';
 import type { IdentityState, VerificationStep } from '../types';
 
@@ -30,8 +32,8 @@ export function IdentityPage({
   onFreezeAccount,
   onResetIdentity,
 }: IdentityPageProps) {
-  const [showFraudPanel, setShowFraudPanel] = useState(false);
-  const [isScanning, setIsScanning] = useState(false);
+  const [showFraudPanel, setShowFraudPanel] = React.useState(false);
+  const [isScanning, setIsScanning] = React.useState(false);
 
   const getStatusIcon = () => {
     switch (identity.status) {
