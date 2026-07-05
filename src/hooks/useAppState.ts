@@ -117,6 +117,21 @@ export function useAppState() {
     }));
   }, []);
 
+  const checkLaw1Violations = useCallback((content: string): string[] => {
+    const violations: string[] = [];
+    const lowerContent = content.toLowerCase();
+
+    PROTOCOL_RULES.filter(rule => rule.law === 1).forEach(rule => {
+      rule.keywords.forEach(keyword => {
+        if (lowerContent.includes(keyword.toLowerCase())) {
+          violations.push(`${rule.name}: "${keyword}" detected`);
+        }
+      });
+    });
+
+    return violations;
+  }, []);
+
   // Proposal Compiler Actions
   const submitProposal = useCallback((proposal: Omit<Proposal, 'id' | 'submittedAt' | 'status'>) => {
     const violations = checkLaw1Violations(proposal.content);
@@ -137,22 +152,7 @@ export function useAppState() {
     }));
 
     return newProposal;
-  }, []);
-
-  const checkLaw1Violations = useCallback((content: string): string[] => {
-    const violations: string[] = [];
-    const lowerContent = content.toLowerCase();
-
-    PROTOCOL_RULES.filter(rule => rule.law === 1).forEach(rule => {
-      rule.keywords.forEach(keyword => {
-        if (lowerContent.includes(keyword.toLowerCase())) {
-          violations.push(`${rule.name}: "${keyword}" detected`);
-        }
-      });
-    });
-
-    return violations;
-  }, []);
+  }, [checkLaw1Violations]);
 
   // RCV Voting Actions
   const submitBallot = useCallback((submission: Omit<BallotSubmission, 'submittedAt'>) => {
@@ -162,7 +162,7 @@ export function useAppState() {
         submittedAt: new Date(),
       };
 
-      let newBallotOptions = [...prev.ballotOptions];
+      const newBallotOptions = [...prev.ballotOptions];
 
       // Handle write-in
       if (submission.writeIn) {
@@ -234,7 +234,7 @@ export function useAppState() {
       }
 
       // Update ballot options with write-ins
-      let newBallotOptions = [...prev.ballotOptions];
+      const newBallotOptions = [...prev.ballotOptions];
       const writeInCounts: Record<string, number> = {};
 
       newSubmissions.forEach(sub => {
@@ -328,7 +328,7 @@ export function calculateRCVResult(
 
     currentRankings.forEach(rankings => {
       const firstChoice = rankings[0];
-      if (firstChoice && voteDistribution.hasOwnProperty(firstChoice.optionId)) {
+      if (firstChoice && Object.prototype.hasOwnProperty.call(voteDistribution, firstChoice.optionId)) {
         voteDistribution[firstChoice.optionId]++;
       }
     });
@@ -367,9 +367,12 @@ export function calculateRCVResult(
     // Eliminate loser
     currentOptions = currentOptions.filter(opt => opt.id !== loserId);
 
+    // Optimization: Create a Set of current option IDs for O(1) lookup
+    const currentOptionIds = new Set(currentOptions.map(opt => opt.id));
+
     // Redistribute votes
     currentRankings = currentRankings.map(rankings =>
-      rankings.filter(r => currentOptions.some(opt => opt.id === r.optionId))
+      rankings.filter(r => currentOptionIds.has(r.optionId))
     );
 
     rounds.push({
