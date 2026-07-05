@@ -10,7 +10,6 @@ function App() {
     state,
     setCurrentPage,
     completeVerificationStep,
-    addVouchToken,
     triggerFraudStrike,
     freezeAccount,
     resetIdentity,
@@ -31,7 +30,6 @@ function App() {
           <IdentityPage
             identity={state.identity}
             onCompleteStep={completeVerificationStep}
-            onAddVouchToken={addVouchToken}
             onTriggerFraud={triggerFraudStrike}
             onFreezeAccount={freezeAccount}
             onResetIdentity={resetIdentity}
