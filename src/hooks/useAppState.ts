@@ -333,12 +333,25 @@ function calculateRCVResult(
       }
     });
 
+    let maxVotes = -Infinity;
+    let minVotes = Infinity;
+    let winnerId: string | undefined;
+    let loserId: string | undefined;
+
+    for (const id in voteDistribution) {
+      const votes = voteDistribution[id];
+      if (votes > maxVotes) {
+        maxVotes = votes;
+        winnerId = id;
+      }
+      if (votes < minVotes) {
+        minVotes = votes;
+        loserId = id;
+      }
+    }
+
     // Check for winner
-    const maxVotes = Math.max(...Object.values(voteDistribution));
     if (maxVotes > threshold) {
-      const winnerId = Object.keys(voteDistribution).find(
-        id => voteDistribution[id] === maxVotes
-      );
       winner = currentOptions.find(opt => opt.id === winnerId);
 
       rounds.push({
@@ -350,12 +363,6 @@ function calculateRCVResult(
       });
       break;
     }
-
-    // Find loser (minimum votes)
-    const minVotes = Math.min(...Object.values(voteDistribution));
-    const loserId = Object.keys(voteDistribution).find(
-      id => voteDistribution[id] === minVotes
-    );
 
     // Eliminate loser
     currentOptions = currentOptions.filter(opt => opt.id !== loserId);
