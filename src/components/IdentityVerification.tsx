@@ -12,13 +12,14 @@ import {
   RefreshCw,
   AlertOctagon,
 } from 'lucide-react';
-import { useState } from 'react';
+import React from 'react';
 import type { IdentityState, VerificationStep, VouchToken } from '../types';
+import { useState } from 'react';
+import type { IdentityState, VerificationStep } from '../types';
 
 interface IdentityPageProps {
   identity: IdentityState;
   onCompleteStep: (step: VerificationStep) => void;
-  onAddVouchToken: (token: VouchToken) => void;
   onTriggerFraud: (reason: string) => void;
   onFreezeAccount: (reason: string) => void;
   onResetIdentity: () => void;
@@ -31,8 +32,8 @@ export function IdentityPage({
   onFreezeAccount,
   onResetIdentity,
 }: IdentityPageProps) {
-  const [showFraudPanel, setShowFraudPanel] = useState(false);
-  const [isScanning, setIsScanning] = useState(false);
+  const [showFraudPanel, setShowFraudPanel] = React.useState(false);
+  const [isScanning, setIsScanning] = React.useState(false);
 
   const getStatusIcon = () => {
     switch (identity.status) {
