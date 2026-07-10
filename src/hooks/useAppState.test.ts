@@ -1,6 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
-import { useAppState } from './useAppState';
+import { useAppState, calculateRCVResult } from './useAppState';
 import { describe, it, expect } from 'vitest';
+import { BallotOption, BallotSubmission } from '../types';
 
 describe('useAppState', () => {
   describe('submitBallot', () => {
@@ -81,9 +82,9 @@ describe('useAppState', () => {
 
       // No new option should be created
       expect(result.current.state.ballotOptions).toHaveLength(initialOptionsCount);
-import { describe, it, expect } from 'vitest';
-import { calculateRCVResult } from './useAppState';
-import { BallotOption, BallotSubmission } from '../types';
+    });
+  });
+});
 
 describe('calculateRCVResult', () => {
   const options: BallotOption[] = [
@@ -177,9 +178,8 @@ describe('calculateRCVResult', () => {
     // It should eliminate options until one remains or majority is reached.
     const result = calculateRCVResult(options, submissions);
     expect(result.winner).toBeDefined();
-import { renderHook } from '@testing-library/react';
-import { useAppState } from './useAppState';
-import { describe, it, expect } from 'vitest';
+  });
+});
 
 describe('useAppState', () => {
   describe('checkLaw1Violations', () => {
