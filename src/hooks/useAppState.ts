@@ -253,8 +253,9 @@ export function useAppState() {
       });
 
       Object.entries(writeInCounts).forEach(([writeIn, count]) => {
+        const writeInLower = writeIn.toLowerCase();
         const existing = newBallotOptions.find(
-          opt => opt.isWriteIn && opt.title.toLowerCase() === writeIn.toLowerCase()
+          opt => opt.isWriteIn && opt.title.toLowerCase() === writeInLower
         );
 
         if (existing) {
