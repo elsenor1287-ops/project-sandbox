@@ -59,7 +59,7 @@ describe('App Routing', () => {
   });
 
   it('renders Dashboard when route is /dashboard', () => {
-    (useAppState as any).mockReturnValue({
+    (useAppState as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       ...mockAppState,
       state: { ...mockAppState.state, currentPage: '/dashboard' },
     });
@@ -73,7 +73,7 @@ describe('App Routing', () => {
   });
 
   it('renders IdentityPage when route is /identity', () => {
-    (useAppState as any).mockReturnValue({
+    (useAppState as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       ...mockAppState,
       state: { ...mockAppState.state, currentPage: '/identity' },
     });
@@ -85,7 +85,7 @@ describe('App Routing', () => {
   });
 
   it('renders VotingPage when route is /vote', () => {
-    (useAppState as any).mockReturnValue({
+    (useAppState as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       ...mockAppState,
       state: { ...mockAppState.state, currentPage: '/vote' },
     });
@@ -97,7 +97,7 @@ describe('App Routing', () => {
   });
 
   it('renders CompilerPage when route is /compiler', () => {
-    (useAppState as any).mockReturnValue({
+    (useAppState as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       ...mockAppState,
       state: { ...mockAppState.state, currentPage: '/compiler' },
     });
@@ -109,7 +109,7 @@ describe('App Routing', () => {
   });
 
   it('renders Dashboard as default fallback for unknown routes', () => {
-    (useAppState as any).mockReturnValue({
+    (useAppState as unknown as ReturnType<typeof vi.fn>).mockReturnValue({
       ...mockAppState,
       state: { ...mockAppState.state, currentPage: '/unknown-route-123' },
     });

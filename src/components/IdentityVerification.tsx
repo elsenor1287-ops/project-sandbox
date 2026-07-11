@@ -13,6 +13,7 @@ import {
   AlertOctagon,
 } from 'lucide-react';
 import React from 'react';
+
 import type { IdentityState, VerificationStep } from '../types';
 
 interface IdentityPageProps {
