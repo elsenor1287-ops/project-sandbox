@@ -47,22 +47,6 @@ export function VotingPage({
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulationRound, setSimulationRound] = useState(0);
 
-  const testAccountsMap = useMemo(() => {
-    const map = new Map<string, TestAccount>();
-    for (const acc of testAccounts) {
-      map.set(acc.id, acc);
-    }
-    return map;
-  }, [testAccounts]);
-
-  const ballotOptionsMap = useMemo(() => {
-    const map = new Map<string, BallotOption>();
-    for (const opt of ballotOptions) {
-      map.set(opt.id, opt);
-    }
-    return map;
-  }, [ballotOptions]);
-
   const handleSubmit = () => {
     onSubmitBallot({
       voterId: 'CITIZEN-2024-01337',
@@ -437,7 +421,6 @@ export function VotingPage({
               </thead>
               <tbody className="text-sm">
                 {submissions.slice(-10).reverse().map((sub, idx) => {
-                  const voter = testAccountsMap.get(sub.voterId);
                   const voter = accountsMap.get(sub.voterId);
                   return (
                     <tr key={idx} className="border-b border-primary-700/50">
@@ -445,8 +428,7 @@ export function VotingPage({
                         {voter?.name || 'You'}
                       </td>
                       <td className="py-3 text-primary-300">
-                        {sub.rankings.sort((a, b) => a.rank - b.rank).map(r => {
-                          const opt = ballotOptionsMap.get(r.optionId);
+                        {[...sub.rankings].sort((a, b) => a.rank - b.rank).map(r => {
                           const opt = optionsMap.get(r.optionId);
                           return `${r.rank}: ${opt?.title || 'Unknown'}`;
                         }).join(' → ')}
