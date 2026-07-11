@@ -102,10 +102,23 @@ export function CompilerPage({
       const regex = new RegExp(`(${escapedKeywords.join('|')})`, 'gi');
       highlighted = highlighted.replace(regex, '==VIOLATION==$1==END==');
     }
+    if (!violations.length) return text;
+
+    const keywords = violations
+      .map(v => v.split('"')[1])
+      .filter(Boolean);
+
+    if (keywords.length === 0) return text;
+
+    const escapedKeywords = keywords
+      .map(kw => kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+      .sort((a, b) => b.length - a.length);
+
+    const regex = new RegExp(`(${escapedKeywords.join('|')})`, 'gi');
+    const highlighted = text.replace(regex, '==VIOLATION==$1==END==');
 
     return highlighted
-      .replace(/==VIOLATION==.*?==END==/g, match => {
-        const keyword = match.replace(/==VIOLATION==|==END==/g, '');
+      .replace(/==VIOLATION==(.*?)==END==/g, (_, keyword) => {
         return `<span class="bg-danger-500/30 text-danger-300 px-1 rounded">${keyword}</span>`;
       });
   };
