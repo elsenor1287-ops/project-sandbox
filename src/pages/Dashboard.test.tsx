@@ -103,6 +103,20 @@ describe('Dashboard', () => {
 
     // Check calendar events presentation in CycleTimeline
     expect(screen.getByText('Test Event')).toBeInTheDocument();
+    // CycleTimeline
+    expect(screen.getByText('Cycle Timeline')).toBeInTheDocument();
+
+    // BallotStatus
+    expect(screen.getByText('Current RCV Ballot Status')).toBeInTheDocument();
+
+    // IdentityQuickView
+    expect(screen.getByText('Identity Status')).toBeInTheDocument();
+
+    // ProposalActivity
+    expect(screen.getByText('Proposal Activity')).toBeInTheDocument();
+
+    // NetworkStats
+    expect(screen.getByText('Network Status')).toBeInTheDocument();
   });
 
   it('calculates participation rate correctly when there are submissions', () => {
