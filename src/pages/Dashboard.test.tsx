@@ -50,6 +50,21 @@ describe('Dashboard', () => {
     expect(screen.getByText('13d left')).toBeInTheDocument();
     // 0 submissions means 0.0% participation rate
     expect(screen.getByText('0.0% participation rate')).toBeInTheDocument();
+
+    // CycleTimeline
+    expect(screen.getByText('Cycle Timeline')).toBeInTheDocument();
+
+    // BallotStatus
+    expect(screen.getByText('Current RCV Ballot Status')).toBeInTheDocument();
+
+    // IdentityQuickView
+    expect(screen.getByText('Identity Status')).toBeInTheDocument();
+
+    // ProposalActivity
+    expect(screen.getByText('Proposal Activity')).toBeInTheDocument();
+
+    // NetworkStats
+    expect(screen.getByText('Network Status')).toBeInTheDocument();
   });
 
   it('calculates participation rate correctly when there are submissions', () => {
