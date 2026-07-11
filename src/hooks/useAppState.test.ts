@@ -86,6 +86,8 @@ describe('useAppState', () => {
     });
   });
 
+  });
+
   describe('checkLaw1Violations', () => {
     it('returns empty array when there are no violations', () => {
       const { result } = renderHook(() => useAppState());
