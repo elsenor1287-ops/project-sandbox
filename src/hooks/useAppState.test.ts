@@ -2,7 +2,6 @@ import { renderHook, act } from '@testing-library/react';
 import { useAppState, calculateRCVResult } from './useAppState';
 import { describe, it, expect } from 'vitest';
 import { BallotOption, BallotSubmission } from '../types';
-import { calculateRCVResult } from './useAppState';
 
 describe('useAppState', () => {
   describe('submitBallot', () => {
