@@ -2,7 +2,7 @@ import { useAppState } from './useAppState';
 import { describe, it, expect } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { renderHook, act } from '@testing-library/react';
-import { useAppState, calculateRCVResult } from './useAppState';
+import { useAppState } from './useAppState';
 import { describe, it, expect } from 'vitest';
 import { BallotOption, BallotSubmission } from '../types';
 

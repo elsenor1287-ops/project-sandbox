@@ -93,6 +93,15 @@ export function CompilerPage({
   };
 
   const highlightViolations = (text: string, violations: string[]) => {
+    let highlighted = text;
+    const keywords = violations.map(v => v.split('"')[1]).filter(Boolean);
+
+    if (keywords.length > 0) {
+      // Escape regex special characters from keywords just in case
+      const escapedKeywords = keywords.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+      const regex = new RegExp(`(${escapedKeywords.join('|')})`, 'gi');
+      highlighted = highlighted.replace(regex, '==VIOLATION==$1==END==');
+    }
     if (!violations.length) return text;
 
     const keywords = violations
