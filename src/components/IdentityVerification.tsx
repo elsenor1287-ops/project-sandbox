@@ -16,6 +16,8 @@ import React from 'react';
 import type { IdentityState, VerificationStep, VouchToken } from '../types';
 import { useState } from 'react';
 
+import type { IdentityState, VerificationStep } from '../types';
+
 interface IdentityPageProps {
   identity: IdentityState;
   onCompleteStep: (step: VerificationStep) => void;

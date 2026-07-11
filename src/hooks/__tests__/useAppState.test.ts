@@ -1,5 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
 import { useAppState } from '../useAppState';
+import { describe, it, expect } from 'vitest';
 
 describe('useAppState', () => {
   describe('triggerFraudStrike', () => {
