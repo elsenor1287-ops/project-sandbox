@@ -97,14 +97,6 @@ export function VotingPage({
   const totalVoters = testAccounts.length + 1;
   const participationRate = (votedCount / totalVoters) * 100;
 
-  const optionsMap = useMemo(
-    () => new Map(ballotOptions.map(o => [o.id, o])),
-    [ballotOptions]
-  );
-  const accountsMap = useMemo(
-    () => new Map(testAccounts.map(a => [a.id, a])),
-    [testAccounts]
-  );
 
   return (
     <div className="p-8 space-y-8">
@@ -349,13 +341,13 @@ export function VotingPage({
                         <span className="badge-success">Winner Declared</span>
                       ) : (
                         <span className="text-xs text-danger-400">
-                          Eliminated: {optionsMap.get(round.eliminatedOptionId!)?.title}
+                          Eliminated: {ballotOptionsMap.get(round.eliminatedOptionId!)?.title}
                         </span>
                       )}
                     </div>
                     <div className="space-y-2">
                       {Object.entries(round.voteDistribution).map(([id, count]) => {
-                        const option = optionsMap.get(id);
+                        const option = ballotOptionsMap.get(id);
                         const percentage = (count / round.totalVotes) * 100;
                         const isWinner = round.winner === id;
                         const isEliminated = round.eliminatedOptionId === id;
@@ -422,6 +414,7 @@ export function VotingPage({
               <tbody className="text-sm">
                 {submissions.slice(-10).reverse().map((sub, idx) => {
                   const voter = accountsMap.get(sub.voterId);
+                  const voter = testAccountsMap.get(sub.voterId);
                   return (
                     <tr key={idx} className="border-b border-primary-700/50">
                       <td className="py-3 text-primary-200">
@@ -430,6 +423,8 @@ export function VotingPage({
                       <td className="py-3 text-primary-300">
                         {[...sub.rankings].sort((a, b) => a.rank - b.rank).map(r => {
                           const opt = optionsMap.get(r.optionId);
+                        {sub.rankings.sort((a, b) => a.rank - b.rank).map(r => {
+                          const opt = ballotOptionsMap.get(r.optionId);
                           return `${r.rank}: ${opt?.title || 'Unknown'}`;
                         }).join(' → ')}
                       </td>
