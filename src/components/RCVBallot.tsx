@@ -414,8 +414,6 @@ export function VotingPage({
               <tbody className="text-sm">
                 {submissions.slice(-10).reverse().map((sub, idx) => {
                   const voter = accountsMap.get(sub.voterId) || testAccountsMap.get(sub.voterId);
-                  const voter = accountsMap.get(sub.voterId);
-                  const voter = testAccountsMap.get(sub.voterId);
                   return (
                     <tr key={idx} className="border-b border-primary-700/50">
                       <td className="py-3 text-primary-200">
@@ -423,10 +421,7 @@ export function VotingPage({
                       </td>
                       <td className="py-3 text-primary-300">
                         {[...sub.rankings].sort((a, b) => a.rank - b.rank).map(r => {
-                          const opt = optionsMap.get(r.optionId);
-                        {sub.rankings.sort((a, b) => a.rank - b.rank).map(r => {
                           const opt = optionsMap.get(r.optionId) || ballotOptionsMap.get(r.optionId);
-                          const opt = ballotOptionsMap.get(r.optionId);
                           return `${r.rank}: ${opt?.title || 'Unknown'}`;
                         }).join(' → ')}
                       </td>
