@@ -99,5 +99,52 @@ describe('IdentityPage', () => {
       fireEvent.click(resetBtn);
       expect(mockProps.onResetIdentity).toHaveBeenCalled();
     });
+
+    it('renders frozen reason when panel is expanded and reason exists', () => {
+      const frozenDate = new Date('2024-02-01T00:00:00Z');
+      render(
+        <IdentityPage
+          {...mockProps}
+          identity={{
+            ...mockIdentity,
+            status: 'frozen',
+            frozenReason: 'Test Freeze Reason',
+            frozenAt: frozenDate,
+          }}
+        />
+      );
+
+      fireEvent.click(screen.getByText('Fraud Testing Suite'));
+
+      expect(screen.getByText('Freeze Reason: Test Freeze Reason')).toBeInTheDocument();
+      expect(screen.getByText(`Frozen at: ${frozenDate.toLocaleString()}`)).toBeInTheDocument();
+    });
+  });
+
+  describe('Vouch Tokens', () => {
+    it('renders vouch tokens correctly when array is not empty', () => {
+      const signedDate = new Date('2024-03-01T00:00:00Z');
+      render(
+        <IdentityPage
+          {...mockProps}
+          identity={{
+            ...mockIdentity,
+            vouchTokens: [
+              {
+                id: 'token-1',
+                neighborName: 'Alice Neighbor',
+                neighborAddress: '123 Test St',
+                signedAt: signedDate,
+                isValid: true,
+              },
+            ],
+          }}
+        />
+      );
+
+      expect(screen.getByText('Alice Neighbor')).toBeInTheDocument();
+      expect(screen.getByText('123 Test St')).toBeInTheDocument();
+      expect(screen.getByText(signedDate.toLocaleDateString())).toBeInTheDocument();
+    });
   });
 });
