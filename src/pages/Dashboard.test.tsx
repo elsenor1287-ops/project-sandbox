@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { Dashboard } from './Dashboard';
 import type { AppState } from '../types';
 
@@ -38,7 +38,7 @@ describe('Dashboard', () => {
     vi.useRealTimers();
   });
 
-  it('renders all main sections', () => {
+  it('renders all main sections and checks navigation buttons', () => {
     const onNavigateMock = vi.fn();
     render(<Dashboard state={defaultAppState} onNavigate={onNavigateMock} />);
 
@@ -50,6 +50,59 @@ describe('Dashboard', () => {
     expect(screen.getByText('13d left')).toBeInTheDocument();
     // 0 submissions means 0.0% participation rate
     expect(screen.getByText('0.0% participation rate')).toBeInTheDocument();
+
+    // Check presence of child components
+    expect(screen.getByText('Cycle Timeline')).toBeInTheDocument();
+    expect(screen.getByText('Current RCV Ballot Status')).toBeInTheDocument();
+    expect(screen.getByText('Identity Status')).toBeInTheDocument();
+    expect(screen.getByText('Proposal Activity')).toBeInTheDocument();
+    expect(screen.getByText('Network Status')).toBeInTheDocument();
+
+    // Check interaction for IdentityQuickView
+    const manageBtn = screen.getByText('Manage');
+    fireEvent.click(manageBtn);
+    expect(onNavigateMock).toHaveBeenCalledWith('/identity');
+
+    // Check interaction for BallotStatus
+    const viewBallotBtn = screen.getByText('View Ballot');
+    fireEvent.click(viewBallotBtn);
+    expect(onNavigateMock).toHaveBeenCalledWith('/vote');
+
+    // Check interaction for ProposalActivity
+    const compileBtn = screen.getByText('Compile');
+    fireEvent.click(compileBtn);
+    expect(onNavigateMock).toHaveBeenCalledWith('/compiler');
+  });
+
+  it('renders correctly with populated app state', () => {
+    const onNavigateMock = vi.fn();
+    const populatedState: AppState = {
+      ...defaultAppState,
+      rcvResult: {
+        winner: { id: 'o1', title: 'Winner Proposal' },
+        rounds: [],
+      },
+      proposals: [
+        { id: 'p1', title: 'Test Proposal', tier: 'Tier 1', status: 'compiled', creatorId: '123', content: '...', endorsements: [], requiredEndorsements: 5 },
+      ],
+      calendarEvents: [
+        { id: 'e1', title: 'Test Event', date: new Date('2024-02-15T12:00:00Z'), type: 'milestone' },
+      ],
+    };
+
+    render(<Dashboard state={populatedState} onNavigate={onNavigateMock} />);
+
+    // Check rcvResult presentation in BallotStatus
+    expect(screen.getByText('Current Leader')).toBeInTheDocument();
+    expect(screen.getByText('Winner Proposal')).toBeInTheDocument();
+
+    // Check proposals presentation in ProposalActivity
+    expect(screen.getByText('Test Proposal')).toBeInTheDocument();
+    expect(screen.getByText('Tier 1')).toBeInTheDocument();
+    expect(screen.getByText('compiled')).toBeInTheDocument();
+
+    // Check calendar events presentation in CycleTimeline
+    expect(screen.getByText('Test Event')).toBeInTheDocument();
   });
 
   it('calculates participation rate correctly when there are submissions', () => {
