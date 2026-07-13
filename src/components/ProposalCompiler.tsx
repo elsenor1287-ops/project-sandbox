@@ -93,26 +93,21 @@ export function CompilerPage({
   };
 
   const highlightViolations = (text: string, violations: string[]) => {
-    if (!violations.length) return text;
-
-    const sortedKeywords = violations
-      .map(v => v.split('"')[1])
-      .filter(Boolean);
-
-    if (sortedKeywords.length === 0) return highlighted;
-
-    const escapedSortedKeywords = sortedKeywords
-      .map(kw => kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-      .sort((a, b) => b.length - a.length);
-
-    const sortedRegex = new RegExp(`(${escapedSortedKeywords.join('|')})`, 'gi');
-    const sortedHighlighted = highlighted.replace(sortedRegex, '==VIOLATION==$1==END==');
-
-    return sortedHighlighted
-      .replace(/==VIOLATION==(.*?)==END==/g, (_, keyword) => {
+    let highlighted = text;
+    violations.forEach(v => {
+      const keyword = v.split('"')[1];
+      if (keyword) {
+        const regex = new RegExp(`(${keyword})`, 'gi');
+        highlighted = highlighted.replace(regex, '==VIOLATION==$1==END==');
+      }
+    });
+    return highlighted
+      .replace(/==VIOLATION==.*?==END==/g, match => {
+        const keyword = match.replace(/==VIOLATION==|==END==/g, '');
         return `<span class="bg-danger-500/30 text-danger-300 px-1 rounded">${keyword}</span>`;
       });
   };
+
   return (
     <div className="p-8 space-y-8">
       {/* Header */}

@@ -1,8 +1,0 @@
-"enhancement":
-  - src/**/*
-
-"bug":
-  - src/**/*
-
-"documentation":
-  - "*.md"

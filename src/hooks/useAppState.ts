@@ -32,12 +32,6 @@ const initialState: AppState = {
   calendarEvents: MOCK_CALENDAR_EVENTS,
 };
 
-const secureRandom = () => {
-  const array = new Uint32Array(1);
-  crypto.getRandomValues(array);
-  return array[0] / (0xffffffff + 1);
-};
-
 export function useAppState() {
   const [state, setState] = useState<AppState>(initialState);
 
@@ -175,9 +169,8 @@ export function useAppState() {
 
       // Handle write-in
       if (submission.writeIn) {
-        const submissionWriteInLower = submission.writeIn.toLowerCase();
         const existingWriteIn = newBallotOptions.find(
-          opt => opt.isWriteIn && opt.title.toLowerCase() === submissionWriteInLower
+          opt => opt.isWriteIn && opt.title.toLowerCase() === submission.writeIn!.toLowerCase()
         );
 
         if (existingWriteIn) {
@@ -222,14 +215,14 @@ export function useAppState() {
         const account = accounts[i];
         if (!account.hasVoted) {
           // Generate random rankings
-          const shuffled = [...prev.ballotOptions].sort(() => secureRandom() - 0.5);
-          const rankings = shuffled.slice(0, Math.floor(secureRandom() * 4) + 1).map((opt, idx) => ({
+          const shuffled = [...prev.ballotOptions].sort(() => Math.random() - 0.5);
+          const rankings = shuffled.slice(0, Math.floor(Math.random() * 4) + 1).map((opt, idx) => ({
             optionId: opt.id,
             rank: idx + 1,
           }));
 
           // Randomly add a write-in (10% chance)
-          const writeIn = secureRandom() < 0.1 ? `Citizen Initiative #${Math.floor(secureRandom() * 100)}` : undefined;
+          const writeIn = Math.random() < 0.1 ? `Citizen Initiative #${Math.floor(Math.random() * 100)}` : undefined;
 
           account.hasVoted = true;
           if (writeIn) account.writeIns.push(writeIn);
@@ -254,9 +247,8 @@ export function useAppState() {
       });
 
       Object.entries(writeInCounts).forEach(([writeIn, count]) => {
-        const writeInLower = writeIn.toLowerCase();
         const existing = newBallotOptions.find(
-          opt => opt.isWriteIn && opt.title.toLowerCase() === writeInLower
+          opt => opt.isWriteIn && opt.title.toLowerCase() === writeIn.toLowerCase()
         );
 
         if (existing) {
