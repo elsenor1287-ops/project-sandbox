@@ -113,7 +113,6 @@ export function CompilerPage({
         return `<span class="bg-danger-500/30 text-danger-300 px-1 rounded">${keyword}</span>`;
       });
   };
-
   return (
     <div className="p-8 space-y-8">
       {/* Header */}

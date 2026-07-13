@@ -2,6 +2,7 @@ import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import { CompilerPage } from './ProposalCompiler';
+import { vi, describe, it, expect, afterEach } from 'vitest';
 import type { Proposal } from '../types';
 
 describe('CompilerPage', () => {

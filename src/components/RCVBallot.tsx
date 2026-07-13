@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import {
   Vote,
   BarChart3,
@@ -348,13 +348,13 @@ export function VotingPage({
                         <span className="badge-success">Winner Declared</span>
                       ) : (
                         <span className="text-xs text-danger-400">
-                          Eliminated: {ballotOptionsMap.get(round.eliminatedOptionId!)?.title}
+                          Eliminated: {ballotOptions.find(o => o.id === round.eliminatedOptionId!)?.title}
                         </span>
                       )}
                     </div>
                     <div className="space-y-2">
                       {Object.entries(round.voteDistribution).map(([id, count]) => {
-                        const option = ballotOptionsMap.get(id);
+                        const option = ballotOptions.find(o => o.id === id);
                         const percentage = (count / round.totalVotes) * 100;
                         const isWinner = round.winner === id;
                         const isEliminated = round.eliminatedOptionId === id;
