@@ -28,7 +28,7 @@ describe('CompilerPage', () => {
   it('renders correctly and shows existing proposals', () => {
     render(<CompilerPage {...defaultProps} />);
 
-    expect(screen.getByText('Proposal Compiler Workspace')).toBeInTheDocument();
+    expect(screen.getByText('Proposal Editor')).toBeInTheDocument();
     expect(screen.getByText('Proposal History')).toBeInTheDocument();
     expect(screen.getByText('Existing Proposal')).toBeInTheDocument();
   });
@@ -114,7 +114,6 @@ describe('CompilerPage', () => {
     await waitFor(() => {
       expect(onCheckViolations).toHaveBeenCalledWith('We should ban speech.');
       expect(onSubmitProposal).not.toHaveBeenCalled();
-
       expect(screen.getByText('Compilation Failed')).toBeInTheDocument();
       expect(screen.getByText('First Amendment Shield: "ban speech" detected')).toBeInTheDocument();
     });
