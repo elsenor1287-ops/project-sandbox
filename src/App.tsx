@@ -1,11 +1,15 @@
+import { useState } from 'react';
 import { useAppState } from './hooks/useAppState';
 import { Sidebar, Header } from './components/Layout';
 import { Dashboard } from './pages/Dashboard';
 import { IdentityPage } from './components/IdentityVerification';
 import { VotingPage } from './components/RCVBallot';
 import { CompilerPage } from './components/ProposalCompiler';
+import { LandingPage } from './components/LandingPage';
 
 function App() {
+  const [authenticated, setAuthenticated] = useState(false);
+
   const {
     state,
     setCurrentPage,
@@ -20,6 +24,10 @@ function App() {
     generateMockVotes,
     resetVoting,
   } = useAppState();
+
+  if (!authenticated) {
+    return <LandingPage onEnterDashboard={() => setAuthenticated(true)} />;
+  }
 
   const renderPage = () => {
     switch (state.currentPage) {

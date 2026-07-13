@@ -4,7 +4,6 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "test": "vitest run",
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
@@ -25,11 +24,6 @@
     "@testing-library/user-event": "^14.6.1",
     "@types/jest": "^30.0.0",
     "@testing-library/dom": "^10.4.1",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
-    "@testing-library/user-event": "^14.6.1",
-    "@testing-library/jest-dom": "^6.9.1",
-    "@testing-library/react": "^16.3.2",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
@@ -47,7 +41,7 @@
     "vite": "^5.4.2",
     "vitest": "^4.1.9"
   },
-  "description": "[![Open in Bolt](https://bolt.new/static/open-in-bolt.svg)](https://bolt.new/~/sb1-xy9mdv7v)",
+  "description": "Project Sandbox - Decentralized Civic Governance Engine",
   "main": "eslint.config.js",
   "repository": {
     "type": "git",
@@ -60,5 +54,4 @@
     "url": "https://github.com/elsenor1287-ops/project-sandbox/issues"
   },
   "homepage": "https://github.com/elsenor1287-ops/project-sandbox#readme"
-  }
 }
