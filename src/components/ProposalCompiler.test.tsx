@@ -39,7 +39,7 @@ describe('CompilerPage', () => {
       title: 'New Proposal',
       content: 'New content',
       tier: 'law2_sandbox',
-      status: 'ballot_ready'
+      status: 'ballot_ready',
     });
     const onCheckViolations = vi.fn().mockReturnValue([]);
 
@@ -58,34 +58,34 @@ describe('CompilerPage', () => {
     fireEvent.change(titleInput, { target: { value: 'New Proposal' } });
     fireEvent.change(contentInput, { target: { value: 'New content' } });
 
-    // Ensure button is enabled
     expect(submitBtn).not.toBeDisabled();
-
     fireEvent.click(submitBtn);
 
-    // It should show compiling state
     expect(screen.getByText(/Compiling Proposal\.\.\./i)).toBeInTheDocument();
 
-    // The delay is 1500ms, use waitFor with longer timeout
-    await waitFor(() => {
-      expect(screen.queryByText(/Compiling Proposal\.\.\./i)).not.toBeInTheDocument();
-    }, { timeout: 3000 });
+    await waitFor(
+      () => {
+        expect(screen.queryByText(/Compiling Proposal\.\.\./i)).not.toBeInTheDocument();
+      },
+      { timeout: 3000 }
+    );
 
     await waitFor(() => {
       expect(onCheckViolations).toHaveBeenCalledWith('New content');
       expect(onSubmitProposal).toHaveBeenCalledWith(expect.objectContaining({
         title: 'New Proposal',
         content: 'New content',
-        tier: 'law2_sandbox', // default tier
-      }));
+        tier: 'law2_sandbox',
+        submittedBy: 'CITIZEN-2024-01337',
+      });
       expect(screen.getByText('Compilation Successful')).toBeInTheDocument();
-      expect(screen.getByText('new-p1')).toBeInTheDocument(); // Proposal ID
+      expect(screen.getByText('new-p1')).toBeInTheDocument();
     });
   });
 
   it('fails compilation and shows violations when violations exist', async () => {
     const onSubmitProposal = vi.fn();
-    const onCheckViolations = vi.fn().mockReturnValue(['First Amendment Shield: "ban speech" detected']);
+    const onCheckViolations = vi.fn().mockReturnValue(['Violation: "ban speech"']);
 
     render(
       <CompilerPage
@@ -104,9 +104,12 @@ describe('CompilerPage', () => {
 
     fireEvent.click(submitBtn);
 
-    await waitFor(() => {
-      expect(screen.queryByText(/Compiling Proposal\.\.\./i)).not.toBeInTheDocument();
-    }, { timeout: 3000 });
+    await waitFor(
+      () => {
+        expect(screen.queryByText(/Compiling Proposal\.\.\./i)).not.toBeInTheDocument();
+      },
+      { timeout: 3000 }
+    );
 
     await waitFor(() => {
       expect(onCheckViolations).toHaveBeenCalledWith('We should ban speech.');
@@ -123,7 +126,7 @@ describe('CompilerPage', () => {
       title: 'Law 1 Proposal',
       content: 'Law 1 content',
       tier: 'law1_shield',
-      status: 'ballot_ready'
+      status: 'vetoed',
     });
     const onCheckViolations = vi.fn().mockReturnValue([]);
 
@@ -151,9 +154,12 @@ describe('CompilerPage', () => {
 
     fireEvent.click(submitBtn);
 
-    await waitFor(() => {
-      expect(screen.queryByText(/Compiling Proposal\.\.\./i)).not.toBeInTheDocument();
-    }, { timeout: 3000 });
+    await waitFor(
+      () => {
+        expect(screen.queryByText(/Compiling Proposal\.\.\./i)).not.toBeInTheDocument();
+      },
+      { timeout: 3000 }
+    );
 
     await waitFor(() => {
       expect(onSubmitProposal).toHaveBeenCalledWith(
@@ -182,17 +188,28 @@ describe('CompilerPage', () => {
 
   it('renders proposal history correctly', () => {
     const proposals: Proposal[] = [
-      { id: '1', title: 'Prop 1', content: 'Content 1', tier: 'law2_sandbox', submittedBy: 'user', submittedAt: new Date(), status: 'compiled' },
-      { id: '2', title: 'Prop 2', content: 'Content 2', tier: 'law1_shield', submittedBy: 'user', submittedAt: new Date(), status: 'vetoed', vetoReason: 'Violation' },
+      {
+        id: '1',
+        title: 'Prop 1',
+        content: 'Content 1',
+        tier: 'law2_sandbox',
+        submittedBy: 'user',
+        submittedAt: new Date(),
+        status: 'compiled' as const,
+      },
+      {
+        id: '2',
+        title: 'Prop 2',
+        content: 'Content 2',
+        tier: 'law1_shield',
+        submittedBy: 'user',
+        submittedAt: new Date(),
+        status: 'vetoed' as const,
+        vetoReason: 'Violation',
+      },
     ];
 
-    render(
-      <CompilerPage
-        proposals={proposals}
-        onSubmitProposal={vi.fn()}
-        onCheckViolations={vi.fn()}
-      />
-    );
+    render(<CompilerPage {...defaultProps} proposals={proposals} />);
 
     expect(screen.getByText('Proposal History')).toBeInTheDocument();
     expect(screen.getByText('Prop 1')).toBeInTheDocument();
@@ -201,5 +218,23 @@ describe('CompilerPage', () => {
     expect(screen.getByText('Prop 2')).toBeInTheDocument();
     expect(screen.getByText('Vetoed')).toBeInTheDocument();
     expect(screen.getByText('Violation')).toBeInTheDocument();
+  });
+
+  it('changes active rule tabs correctly', () => {
+    render(<CompilerPage {...defaultProps} />);
+
+    const law1Btn = screen.getByText('Law 1 Rules');
+    const law2Btn = screen.getByText('Law 2 Rules');
+    const law3Btn = screen.getByText('Law 3 Rules');
+
+    expect(law1Btn).toBeInTheDocument();
+    expect(law2Btn).toBeInTheDocument();
+    expect(law3Btn).toBeInTheDocument();
+
+    fireEvent.click(law2Btn);
+    expect(law2Btn).toHaveClass('bg-success-500/20');
+
+    fireEvent.click(law3Btn);
+    expect(law3Btn).toHaveClass('bg-accent-500/20');
   });
 });
