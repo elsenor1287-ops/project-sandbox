@@ -5,11 +5,11 @@ import type { AppState } from '../../types';
 
 // Mock child components
 vi.mock('../../components/dashboard/DashboardHeader', () => ({
-  DashboardHeader: ({ currentCycleName }: any) => <div data-testid="dashboard-header">{currentCycleName}</div>,
+  DashboardHeader: ({ currentCycleName }: { currentCycleName: string }) => <div data-testid="dashboard-header">{currentCycleName}</div>,
 }));
 
 vi.mock('../../components/dashboard/DashboardStats', () => ({
-  DashboardStats: (props: any) => (
+  DashboardStats: (props: { daysRemaining: number; participationRate: number }) => (
     <div data-testid="dashboard-stats">
       <div data-testid="days-remaining">{props.daysRemaining}</div>
       <div data-testid="participation-rate">{props.participationRate}</div>

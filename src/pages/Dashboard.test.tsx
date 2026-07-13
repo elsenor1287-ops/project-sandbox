@@ -79,14 +79,14 @@ describe('Dashboard', () => {
     const populatedState: AppState = {
       ...defaultAppState,
       rcvResult: {
-        winner: { id: 'o1', title: 'Winner Proposal' },
-        rounds: [],
+        winner: { id: 'o1', title: 'Winner Proposal', description: '', budget: 0, category: 'infrastructure', voteCount: 0, isWriteIn: false },
+        rounds: [], totalVotes: 10, completedAt: new Date(),
       },
       proposals: [
-        { id: 'p1', title: 'Test Proposal', tier: 'Tier 1', status: 'compiled', creatorId: '123', content: '...', endorsements: [], requiredEndorsements: 5 },
+        { id: 'p1', title: 'Test Proposal', tier: 'law1_shield', status: 'compiled', submittedBy: '123', submittedAt: new Date(), content: '...' },
       ],
       calendarEvents: [
-        { id: 'e1', title: 'Test Event', date: new Date('2024-02-15T12:00:00Z'), type: 'milestone' },
+        { id: 'e1', title: 'Test Event', date: new Date('2024-02-15T12:00:00Z'), type: 'result' },
       ],
     };
 
@@ -98,7 +98,7 @@ describe('Dashboard', () => {
 
     // Check proposals presentation in ProposalActivity
     expect(screen.getByText('Test Proposal')).toBeInTheDocument();
-    expect(screen.getByText('Tier 1')).toBeInTheDocument();
+    expect(screen.getByText('law1_shield')).toBeInTheDocument();
     expect(screen.getByText('compiled')).toBeInTheDocument();
 
     // Check calendar events presentation in CycleTimeline
@@ -185,8 +185,8 @@ describe('Dashboard', () => {
       ...defaultAppState,
       calendarEvents: [
         { id: 'e1', title: 'Past Event', date: new Date('2024-02-10T12:00:00Z'), type: 'meeting' },
-        { id: 'e2', title: 'Current Event', date: new Date('2024-02-15T14:00:00Z'), type: 'deadline' },
-        { id: 'e3', title: 'Future Event', date: new Date('2024-02-20T12:00:00Z'), type: 'vote' }
+        { id: 'e2', title: 'Current Event', date: new Date('2024-02-15T14:00:00Z'), type: 'proposal' },
+        { id: 'e3', title: 'Future Event', date: new Date('2024-02-20T12:00:00Z'), type: 'voting' }
       ]
     };
 
@@ -203,8 +203,8 @@ describe('Dashboard', () => {
     const state: AppState = {
       ...defaultAppState,
       ballotOptions: [
-        { id: 'o1', title: 'Option 1', description: 'Desc', budget: 1000, isWriteIn: false, category: 'infrastructure' },
-        { id: 'o2', title: 'Option 2', description: 'Desc', budget: 2000, isWriteIn: true, category: 'education' }
+        { id: 'o1', title: 'Option 1', description: 'Desc', budget: 1000, isWriteIn: false, voteCount: 0, category: 'infrastructure' },
+        { id: 'o2', title: 'Option 2', description: 'Desc', budget: 2000, isWriteIn: true, voteCount: 0, category: 'education' }
       ],
       ballotSubmissions: [
         { voterId: 'v1', rankings: [{ optionId: 'o1', rank: 1 }], submittedAt: new Date() },
@@ -237,10 +237,9 @@ describe('Dashboard', () => {
     const state: AppState = {
       ...defaultAppState,
       rcvResult: {
-        winner: { id: 'o1', title: 'Winning Proposal', description: '', budget: 1000, isWriteIn: false, category: 'infrastructure' },
+        winner: { id: 'o1', title: 'Winning Proposal', description: '', budget: 1000, isWriteIn: false, voteCount: 0, category: 'infrastructure' },
         rounds: [],
-        eliminated: [],
-        totalVotes: 10
+        totalVotes: 10, completedAt: new Date()
       }
     };
 
@@ -255,8 +254,8 @@ describe('Dashboard', () => {
     const state: AppState = {
       ...defaultAppState,
       proposals: [
-        { id: 'p1', title: 'Prop 1', description: 'Desc', authorId: 'a1', status: 'draft', tier: 'Tier 1', budget: 1000, category: 'infrastructure', createdAt: new Date() },
-        { id: 'p2', title: 'Prop 2', description: 'Desc', authorId: 'a2', status: 'compiled', tier: 'Tier 2', budget: 2000, category: 'education', createdAt: new Date() }
+        { id: 'p1', title: 'Prop 1', content: 'Desc', submittedBy: 'a1', status: 'draft', tier: 'law1_shield', submittedAt: new Date() },
+        { id: 'p2', title: 'Prop 2', content: 'Desc', submittedBy: 'a2', status: 'compiled', tier: 'law2_sandbox', submittedAt: new Date() }
       ]
     };
 

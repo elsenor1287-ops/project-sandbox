@@ -93,36 +93,14 @@ export function CompilerPage({
   };
 
   const highlightViolations = (text: string, violations: string[]) => {
-    let highlighted = text;
-    const keywords = violations.map(v => v.split('"')[1]).filter(Boolean);
-
-    if (keywords.length > 0) {
-      // Escape regex special characters from keywords just in case
-      const escapedKeywords = keywords.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-      const regex = new RegExp(`(${escapedKeywords.join('|')})`, 'gi');
-      highlighted = highlighted.replace(regex, '==VIOLATION==$1==END==');
-    }
     if (!violations.length) return text;
-
-    const keywords = violations
-      .map(v => v.split('"')[1])
-      .filter(Boolean);
-
+    const keywords = violations.map(v => v.split('"')[1]).filter(Boolean);
     if (keywords.length === 0) return text;
-
-    const escapedKeywords = keywords
-      .map(kw => kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-      .sort((a, b) => b.length - a.length);
-
+    const escapedKeywords = keywords.map(kw => kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).sort((a, b) => b.length - a.length);
     const regex = new RegExp(`(${escapedKeywords.join('|')})`, 'gi');
     const highlighted = text.replace(regex, '==VIOLATION==$1==END==');
-
-    return highlighted
-      .replace(/==VIOLATION==(.*?)==END==/g, (_, keyword) => {
-        return `<span class="bg-danger-500/30 text-danger-300 px-1 rounded">${keyword}</span>`;
-      });
+    return highlighted.replace(/==VIOLATION==(.*?)==END==/g, (_, keyword) => { return `<span class="bg-danger-500/30 text-danger-300 px-1 rounded">${keyword}</span>`; });
   };
-
   return (
     <div className="p-8 space-y-8">
       {/* Header */}

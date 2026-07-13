@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import {
   Vote,
   BarChart3,
@@ -341,13 +341,13 @@ export function VotingPage({
                         <span className="badge-success">Winner Declared</span>
                       ) : (
                         <span className="text-xs text-danger-400">
-                          Eliminated: {ballotOptionsMap.get(round.eliminatedOptionId!)?.title}
+                          Eliminated: {ballotOptions.find(o => o.id === round.eliminatedOptionId!)?.title}
                         </span>
                       )}
                     </div>
                     <div className="space-y-2">
                       {Object.entries(round.voteDistribution).map(([id, count]) => {
-                        const option = ballotOptionsMap.get(id);
+                        const option = ballotOptions.find(o => o.id === id);
                         const percentage = (count / round.totalVotes) * 100;
                         const isWinner = round.winner === id;
                         const isEliminated = round.eliminatedOptionId === id;
@@ -413,7 +413,7 @@ export function VotingPage({
               </thead>
               <tbody className="text-sm">
                 {submissions.slice(-10).reverse().map((sub, idx) => {
-                  const voter = accountsMap.get(sub.voterId) || testAccountsMap.get(sub.voterId);
+                  const voter = testAccounts.find(o => o.id === sub.voterId) || testAccounts.find(o => o.id === sub.voterId);
                   return (
                     <tr key={idx} className="border-b border-primary-700/50">
                       <td className="py-3 text-primary-200">
@@ -421,7 +421,7 @@ export function VotingPage({
                       </td>
                       <td className="py-3 text-primary-300">
                         {[...sub.rankings].sort((a, b) => a.rank - b.rank).map(r => {
-                          const opt = optionsMap.get(r.optionId) || ballotOptionsMap.get(r.optionId);
+                          const opt = ballotOptions.find(o => o.id === r.optionId) || ballotOptions.find(o => o.id === r.optionId);
                           return `${r.rank}: ${opt?.title || 'Unknown'}`;
                         }).join(' → ')}
                       </td>
