@@ -1,8 +1,4 @@
-"enhancement":
-  - src/**/*
-
-"bug":
-  - src/**/*
-
-"documentation":
-  - "*.md"
+# labeler config
+tests:
+  - src/**/*.test.tsx
+  - src/**/*.test.ts
