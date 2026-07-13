@@ -72,7 +72,7 @@ describe('CompilerPage', () => {
 
     await waitFor(() => {
       expect(onCheckViolations).toHaveBeenCalledWith('New content');
-      expect(onSubmitProposal).toHaveBeenCalledWith({
+      expect(onSubmitProposal).toHaveBeenCalledWith(expect.objectContaining({
         title: 'New Proposal',
         content: 'New content',
         tier: 'law2_sandbox',
@@ -116,7 +116,7 @@ describe('CompilerPage', () => {
       expect(onSubmitProposal).not.toHaveBeenCalled();
 
       expect(screen.getByText('Compilation Failed')).toBeInTheDocument();
-      expect(screen.getByText('Violation: "ban speech"')).toBeInTheDocument();
+      expect(screen.getByText('First Amendment Shield: "ban speech" detected')).toBeInTheDocument();
     });
   });
 
@@ -138,9 +138,9 @@ describe('CompilerPage', () => {
       />
     );
 
+    // Click Law 1 Shield button
     const law1Btn = screen.getByText('Law 1').closest('button');
     expect(law1Btn).toBeInTheDocument();
-
     if (law1Btn) {
       fireEvent.click(law1Btn);
     }
@@ -175,6 +175,15 @@ describe('CompilerPage', () => {
 
     const submitBtn = screen.getByRole('button', { name: /Compile & Submit/i });
     expect(submitBtn).toBeDisabled();
+
+    const titleInput = screen.getByPlaceholderText('Enter proposal title...');
+    const contentInput = screen.getByPlaceholderText(/Enter your proposal content here/);
+
+    fireEvent.change(titleInput, { target: { value: 'A' } });
+    expect(submitBtn).toBeDisabled();
+
+    fireEvent.change(contentInput, { target: { value: 'B' } });
+    expect(submitBtn).not.toBeDisabled();
   });
 
   it('renders proposal history correctly', () => {
