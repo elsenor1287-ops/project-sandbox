@@ -116,7 +116,7 @@ describe('CompilerPage', () => {
       expect(onSubmitProposal).not.toHaveBeenCalled();
 
       expect(screen.getByText('Compilation Failed')).toBeInTheDocument();
-      expect(screen.getByText('Violation: "ban speech"')).toBeInTheDocument();
+      expect(screen.getByText('First Amendment Shield: "ban speech" detected')).toBeInTheDocument();
     });
   });
 

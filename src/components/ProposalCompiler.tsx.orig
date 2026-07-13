@@ -99,17 +99,19 @@ export function CompilerPage({
       .map(v => v.split('"')[1])
       .filter(Boolean);
 
-    if (sortedKeywords.length === 0) return text;
+    if (sortedKeywords.length === 0) return highlighted;
 
     const escapedSortedKeywords = sortedKeywords
       .map(kw => kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
       .sort((a, b) => b.length - a.length);
 
     const sortedRegex = new RegExp(`(${escapedSortedKeywords.join('|')})`, 'gi');
+    const sortedHighlighted = highlighted.replace(sortedRegex, '==VIOLATION==$1==END==');
 
-    return text.replace(sortedRegex, (_, keyword: string) => {
-      return `<span class="bg-danger-500/30 text-danger-300 px-1 rounded">${keyword}</span>`;
-    });
+    return sortedHighlighted
+      .replace(/==VIOLATION==(.*?)==END==/g, (_, keyword) => {
+        return `<span class="bg-danger-500/30 text-danger-300 px-1 rounded">${keyword}</span>`;
+      });
   };
 
   return (
