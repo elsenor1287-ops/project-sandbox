@@ -47,6 +47,13 @@ export function VotingPage({
   const [isSimulating, setIsSimulating] = useState(false);
   const [simulationRound, setSimulationRound] = useState(0);
 
+  const sortedSubmissions = useMemo(() => {
+    return submissions.map(sub => ({
+      ...sub,
+      rankings: [...sub.rankings].sort((a, b) => a.rank - b.rank)
+    }));
+  }, [submissions]);
+
   const handleSubmit = () => {
     onSubmitBallot({
       voterId: 'CITIZEN-2024-01337',
@@ -85,7 +92,7 @@ export function VotingPage({
     onRunSimulation();
 
     // Animate through rounds
-    const result = calculateRCVResult(ballotOptions, submissions);
+    const result = calculateRCVResult(ballotOptions, sortedSubmissions);
     for (let i = 0; i < result.rounds.length; i++) {
       await new Promise(r => setTimeout(r, 1000));
       setSimulationRound(i + 1);
@@ -395,11 +402,11 @@ export function VotingPage({
       </div>
 
       {/* Recent Submissions */}
-      {submissions.length > 0 && (
+      {sortedSubmissions.length > 0 && (
         <div className="card p-6">
           <h2 className="text-lg font-semibold text-primary-200 mb-4 flex items-center justify-between">
             <span>Recent Ballot Submissions</span>
-            <span className="text-sm text-primary-400">{submissions.length} total</span>
+            <span className="text-sm text-primary-400">{sortedSubmissions.length} total</span>
           </h2>
           <div className="overflow-x-auto">
             <table className="w-full">
@@ -412,16 +419,16 @@ export function VotingPage({
                 </tr>
               </thead>
               <tbody className="text-sm">
-                {submissions.slice(-10).reverse().map((sub, idx) => {
-                  const voter = testAccounts.find(o => o.id === sub.voterId) || testAccounts.find(o => o.id === sub.voterId);
+                {sortedSubmissions.slice(-10).reverse().map((sub, idx) => {
+                  const voter = accountsMap.get(sub.voterId) || testAccountsMap.get(sub.voterId);
                   return (
                     <tr key={idx} className="border-b border-primary-700/50">
                       <td className="py-3 text-primary-200">
                         {voter?.name || 'You'}
                       </td>
                       <td className="py-3 text-primary-300">
-                        {[...sub.rankings].sort((a, b) => a.rank - b.rank).map(r => {
-                          const opt = ballotOptions.find(o => o.id === r.optionId) || ballotOptions.find(o => o.id === r.optionId);
+                        {sub.rankings.map(r => {
+                          const opt = optionsMap.get(r.optionId) || ballotOptionsMap.get(r.optionId);
                           return `${r.rank}: ${opt?.title || 'Unknown'}`;
                         }).join(' → ')}
                       </td>
@@ -450,7 +457,7 @@ function calculateRCVResult(
 ): RCVResult {
   const rounds: { roundNumber: number; eliminatedOptionId?: string; voteDistribution: Record<string, number>; threshold: number; winner?: string; totalVotes: number }[] = [];
   let currentOptions = [...options];
-  let currentRankings = submissions.map(sub => [...sub.rankings].sort((a, b) => a.rank - b.rank));
+  let currentRankings = submissions.map(sub => sub.rankings);
 
   const totalVotes = submissions.length;
   const threshold = totalVotes / 2;

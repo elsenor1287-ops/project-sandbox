@@ -201,3 +201,4 @@ describe('calculateRCVResult', () => {
     expect(result.winner).toBeDefined();
   });
 });
+

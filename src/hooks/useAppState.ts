@@ -175,8 +175,9 @@ export function useAppState() {
 
       // Handle write-in
       if (submission.writeIn) {
+        const submissionWriteInLower = submission.writeIn.toLowerCase();
         const existingWriteIn = newBallotOptions.find(
-          opt => opt.isWriteIn && opt.title.toLowerCase() === submission.writeIn!.toLowerCase()
+          opt => opt.isWriteIn && opt.title.toLowerCase() === submissionWriteInLower
         );
 
         if (existingWriteIn) {
