@@ -101,4 +101,32 @@ describe('useAppState', () => {
       expect(result.current.state.identity.frozenReason).toBe('third reason');
     });
   });
+
+  describe('runRCVSimulation', () => {
+    it('should calculate and set rcvResult in state', () => {
+      const { result } = renderHook(() => useAppState());
+
+      // Setup mock votes to test simulation
+      act(() => {
+        result.current.generateMockVotes(5);
+      });
+
+      // Verify rcvResult is initially null
+      expect(result.current.state.rcvResult).toBeNull();
+
+      // Run simulation
+      act(() => {
+        result.current.runRCVSimulation();
+      });
+
+      // Verify rcvResult is updated
+      expect(result.current.state.rcvResult).not.toBeNull();
+
+      const rcvResult = result.current.state.rcvResult!;
+      expect(rcvResult).toHaveProperty('winner');
+      expect(rcvResult).toHaveProperty('rounds');
+      expect(rcvResult.totalVotes).toBe(5);
+      expect(rcvResult).toHaveProperty('completedAt');
+    });
+  });
 });
