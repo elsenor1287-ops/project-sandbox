@@ -21,6 +21,17 @@ import {
 
 const LAW1_RULES = PROTOCOL_RULES.filter(rule => rule.law === 1);
 
+const escapeRegExp = (string: string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const COMPILED_LAW1_RULES = LAW1_RULES.map(rule => {
+  const pattern = rule.keywords.map(kw => escapeRegExp(kw.toLowerCase())).join('|');
+  return {
+    name: rule.name,
+    regex: new RegExp(pattern, 'g'),
+    keywordsMap: new Map(rule.keywords.map(kw => [kw.toLowerCase(), kw]))
+  };
+});
+
 const initialState: AppState = {
   currentPage: '/dashboard',
   identity: INITIAL_IDENTITY,
@@ -124,12 +135,17 @@ export function useAppState() {
     const violations: string[] = [];
     const lowerContent = content.toLowerCase();
 
-    LAW1_RULES.forEach(rule => {
-      rule.keywords.forEach(keyword => {
-        if (lowerContent.includes(keyword.toLowerCase())) {
-          violations.push(`${rule.name}: "${keyword}" detected`);
+    COMPILED_LAW1_RULES.forEach(rule => {
+      const matches = lowerContent.match(rule.regex);
+      if (matches) {
+        const uniqueMatches = new Set(matches);
+        for (const match of uniqueMatches) {
+          const originalKw = rule.keywordsMap.get(match);
+          if (originalKw) {
+            violations.push(`${rule.name}: "${originalKw}" detected`);
+          }
         }
-      });
+      }
     });
 
     return violations;
@@ -178,7 +194,7 @@ export function useAppState() {
         } else {
           // Create new write-in option
           const newWriteInOption: BallotOption = {
-            id: `writein-${Date.now()}`,
+            id: `writein-${crypto.randomUUID()}`,
             title: submission.writeIn,
             description: 'Write-in candidate submitted by voters',
             budget: 0,
@@ -255,7 +271,7 @@ export function useAppState() {
           existing.writeInCount = (existing.writeInCount || 0) + count;
         } else {
           newBallotOptions.push({
-            id: `writein-${Date.now()}-${crypto.randomUUID()}`,
+            id: `writein-${crypto.randomUUID()}`,
             title: writeIn,
             description: 'Write-in candidate submitted by voters',
             budget: 0,
