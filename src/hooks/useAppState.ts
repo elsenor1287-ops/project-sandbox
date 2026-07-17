@@ -23,14 +23,23 @@ const LAW1_RULES = PROTOCOL_RULES.filter(rule => rule.law === 1);
 
 const escapeRegExp = (string: string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-const COMPILED_LAW1_RULES = LAW1_RULES.map(rule => {
-  const pattern = rule.keywords.map(kw => escapeRegExp(kw.toLowerCase())).join('|');
-  return {
-    name: rule.name,
-    regex: new RegExp(pattern, 'g'),
-    keywordsMap: new Map(rule.keywords.map(kw => [kw.toLowerCase(), kw]))
-  };
-});
+const LAW1_KEYWORDS_FLAT = LAW1_RULES.flatMap(rule =>
+  rule.keywords.map(kw => ({
+    lowerKw: kw.toLowerCase(),
+    originalKw: kw,
+    ruleName: rule.name
+  }))
+);
+
+const COMPILED_LAW1_REGEX = new RegExp(
+  LAW1_KEYWORDS_FLAT.map(k => escapeRegExp(k.lowerKw)).join('|'),
+  'g'
+);
+
+const LAW1_KEYWORD_MAP = new Map(LAW1_KEYWORDS_FLAT.map(k => [
+  k.lowerKw,
+  `${k.ruleName}: "${k.originalKw}" detected`
+]));
 
 const initialState: AppState = {
   currentPage: '/dashboard',
@@ -135,18 +144,16 @@ export function useAppState() {
     const violations: string[] = [];
     const lowerContent = content.toLowerCase();
 
-    COMPILED_LAW1_RULES.forEach(rule => {
-      const matches = lowerContent.match(rule.regex);
-      if (matches) {
-        const uniqueMatches = new Set(matches);
-        for (const match of uniqueMatches) {
-          const originalKw = rule.keywordsMap.get(match);
-          if (originalKw) {
-            violations.push(`${rule.name}: "${originalKw}" detected`);
-          }
+    const matches = lowerContent.match(COMPILED_LAW1_REGEX);
+    if (matches) {
+      const uniqueMatches = new Set(matches);
+      for (const match of uniqueMatches) {
+        const ruleMsg = LAW1_KEYWORD_MAP.get(match);
+        if (ruleMsg) {
+          violations.push(ruleMsg);
         }
       }
-    });
+    }
 
     return violations;
   }, []);
@@ -156,7 +163,7 @@ export function useAppState() {
     const status = violations.length > 0 ? 'vetoed' : 'compiled';
 
     const newProposal: Proposal = {
-      id: `prop-${Date.now()}`,
+      id: crypto.randomUUID(),
       ...proposal,
       submittedAt: new Date(),
       status,
@@ -178,6 +185,7 @@ export function useAppState() {
     setState(prev => {
       const newSubmission: BallotSubmission = {
         ...submission,
+        rankings: [...submission.rankings].sort((a, b) => a.rank - b.rank),
         submittedAt: new Date(),
       };
 
@@ -194,7 +202,7 @@ export function useAppState() {
         } else {
           // Create new write-in option
           const newWriteInOption: BallotOption = {
-            id: `writein-${crypto.randomUUID()}`,
+            id: crypto.randomUUID(),
             title: submission.writeIn,
             description: 'Write-in candidate submitted by voters',
             budget: 0,
@@ -271,7 +279,7 @@ export function useAppState() {
           existing.writeInCount = (existing.writeInCount || 0) + count;
         } else {
           newBallotOptions.push({
-            id: `writein-${crypto.randomUUID()}`,
+            id: crypto.randomUUID(),
             title: writeIn,
             description: 'Write-in candidate submitted by voters',
             budget: 0,
@@ -331,11 +339,9 @@ export function calculateRCVResult(
   // Track eliminated option IDs
   const eliminated = new Set<string>();
 
-  // Extract and pre-sort option IDs per voter
+  // Extract option IDs per voter (rankings are pre-sorted during submission)
   const voterPreferences = submissions.map(sub => {
-    return [...sub.rankings]
-      .sort((a, b) => a.rank - b.rank)
-      .map(r => r.optionId);
+    return sub.rankings.map(r => r.optionId);
   });
 
   const totalVotes = submissions.length;
