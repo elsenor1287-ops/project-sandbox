@@ -436,7 +436,7 @@ export function VotingPage({
                         {voter?.name || 'You'}
                       </td>
                       <td className="py-3 text-primary-300">
-                        {sub.rankings.sort((a, b) => a.rank - b.rank).map(r => {
+                        {sub.rankings.map(r => {
                           const opt = ballotOptionsMap.get(r.optionId);
                           return `${r.rank}: ${opt?.title || 'Unknown'}`;
                         }).join(' → ')}

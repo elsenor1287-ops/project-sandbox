@@ -163,7 +163,7 @@ export function useAppState() {
     const status = violations.length > 0 ? 'vetoed' : 'compiled';
 
     const newProposal: Proposal = {
-      id: `prop-${Date.now()}`,
+      id: crypto.randomUUID(),
       ...proposal,
       submittedAt: new Date(),
       status,
@@ -185,6 +185,7 @@ export function useAppState() {
     setState(prev => {
       const newSubmission: BallotSubmission = {
         ...submission,
+        rankings: [...submission.rankings].sort((a, b) => a.rank - b.rank),
         submittedAt: new Date(),
       };
 
@@ -201,7 +202,7 @@ export function useAppState() {
         } else {
           // Create new write-in option
           const newWriteInOption: BallotOption = {
-            id: `writein-${crypto.randomUUID()}`,
+            id: crypto.randomUUID(),
             title: submission.writeIn,
             description: 'Write-in candidate submitted by voters',
             budget: 0,
@@ -278,7 +279,7 @@ export function useAppState() {
           existing.writeInCount = (existing.writeInCount || 0) + count;
         } else {
           newBallotOptions.push({
-            id: `writein-${crypto.randomUUID()}`,
+            id: crypto.randomUUID(),
             title: writeIn,
             description: 'Write-in candidate submitted by voters',
             budget: 0,
@@ -338,11 +339,9 @@ export function calculateRCVResult(
   // Track eliminated option IDs
   const eliminated = new Set<string>();
 
-  // Extract and pre-sort option IDs per voter
+  // Extract option IDs per voter (rankings are pre-sorted during submission)
   const voterPreferences = submissions.map(sub => {
-    return [...sub.rankings]
-      .sort((a, b) => a.rank - b.rank)
-      .map(r => r.optionId);
+    return sub.rankings.map(r => r.optionId);
   });
 
   const totalVotes = submissions.length;
