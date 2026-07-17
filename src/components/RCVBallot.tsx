@@ -15,7 +15,6 @@ import {
   X,
 } from 'lucide-react';
 import type { BallotOption, BallotSubmission, RCVResult, TestAccount } from '../types';
-import { calculateRCVResult } from '../hooks/useAppState';
 
 interface VotingPageProps {
   ballotOptions: BallotOption[];

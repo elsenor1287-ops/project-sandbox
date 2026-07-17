@@ -23,14 +23,23 @@ const LAW1_RULES = PROTOCOL_RULES.filter(rule => rule.law === 1);
 
 const escapeRegExp = (string: string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-const COMPILED_LAW1_RULES = LAW1_RULES.map(rule => {
-  const pattern = rule.keywords.map(kw => escapeRegExp(kw.toLowerCase())).join('|');
-  return {
-    name: rule.name,
-    regex: new RegExp(pattern, 'g'),
-    keywordsMap: new Map(rule.keywords.map(kw => [kw.toLowerCase(), kw]))
-  };
-});
+const LAW1_KEYWORDS_FLAT = LAW1_RULES.flatMap(rule =>
+  rule.keywords.map(kw => ({
+    lowerKw: kw.toLowerCase(),
+    originalKw: kw,
+    ruleName: rule.name
+  }))
+);
+
+const COMPILED_LAW1_REGEX = new RegExp(
+  LAW1_KEYWORDS_FLAT.map(k => escapeRegExp(k.lowerKw)).join('|'),
+  'g'
+);
+
+const LAW1_KEYWORD_MAP = new Map(LAW1_KEYWORDS_FLAT.map(k => [
+  k.lowerKw,
+  `${k.ruleName}: "${k.originalKw}" detected`
+]));
 
 const initialState: AppState = {
   currentPage: '/dashboard',
@@ -135,18 +144,16 @@ export function useAppState() {
     const violations: string[] = [];
     const lowerContent = content.toLowerCase();
 
-    COMPILED_LAW1_RULES.forEach(rule => {
-      const matches = lowerContent.match(rule.regex);
-      if (matches) {
-        const uniqueMatches = new Set(matches);
-        for (const match of uniqueMatches) {
-          const originalKw = rule.keywordsMap.get(match);
-          if (originalKw) {
-            violations.push(`${rule.name}: "${originalKw}" detected`);
-          }
+    const matches = lowerContent.match(COMPILED_LAW1_REGEX);
+    if (matches) {
+      const uniqueMatches = new Set(matches);
+      for (const match of uniqueMatches) {
+        const ruleMsg = LAW1_KEYWORD_MAP.get(match);
+        if (ruleMsg) {
+          violations.push(ruleMsg);
         }
       }
-    });
+    }
 
     return violations;
   }, []);
