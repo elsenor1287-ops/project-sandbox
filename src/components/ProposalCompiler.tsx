@@ -22,6 +22,10 @@ interface CompilerPageProps {
   onCheckViolations: (content: string) => string[];
 }
 
+const law1Rules = PROTOCOL_RULES.filter(r => r.law === 1);
+const law2Rules = PROTOCOL_RULES.filter(r => r.law === 2);
+const law3Rules = PROTOCOL_RULES.filter(r => r.law === 3);
+
 export function CompilerPage({
   proposals,
   onSubmitProposal,
@@ -39,10 +43,6 @@ export function CompilerPage({
     proposal?: Proposal;
   } | null>(null);
   const [activeRuleTab, setActiveRuleTab] = useState<'law1' | 'law2' | 'law3'>('law1');
-
-  const law1Rules = PROTOCOL_RULES.filter(r => r.law === 1);
-  const law2Rules = PROTOCOL_RULES.filter(r => r.law === 2);
-  const law3Rules = PROTOCOL_RULES.filter(r => r.law === 3);
 
   const handleCompile = async () => {
     setIsCompiling(true);

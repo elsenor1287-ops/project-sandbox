@@ -1,4 +1,5 @@
 import { useState, useMemo } from 'react';
+import { calculateRCVResult } from '../hooks/useAppState';
 import {
   Vote,
   BarChart3,
@@ -112,15 +113,6 @@ export function VotingPage({
   const votedCount = submissions.length;
   const totalVoters = testAccounts.length + 1;
   const participationRate = (votedCount / totalVoters) * 100;
-
-  const optionsMap = useMemo(
-    () => new Map(ballotOptions.map(o => [o.id, o])),
-    [ballotOptions]
-  );
-  const accountsMap = useMemo(
-    () => new Map(testAccounts.map(a => [a.id, a])),
-    [testAccounts]
-  );
 
   return (
     <div className="p-8 space-y-8">
@@ -365,13 +357,13 @@ export function VotingPage({
                         <span className="badge-success">Winner Declared</span>
                       ) : (
                         <span className="text-xs text-danger-400">
-                          Eliminated: {optionsMap.get(round.eliminatedOptionId!)?.title}
+                          Eliminated: {ballotOptionsMap.get(round.eliminatedOptionId!)?.title}
                         </span>
                       )}
                     </div>
                     <div className="space-y-2">
                       {Object.entries(round.voteDistribution).map(([id, count]) => {
-                        const option = optionsMap.get(id);
+                        const option = ballotOptionsMap.get(id);
                         const percentage = (count / round.totalVotes) * 100;
                         const isWinner = round.winner === id;
                         const isEliminated = round.eliminatedOptionId === id;
@@ -437,7 +429,7 @@ export function VotingPage({
               </thead>
               <tbody className="text-sm">
                 {submissions.slice(-10).reverse().map((sub, idx) => {
-                  const voter = testAccountsMap.get(sub.voterId) ?? accountsMap.get(sub.voterId);
+                  const voter = testAccountsMap.get(sub.voterId);
                   return (
                     <tr key={idx} className="border-b border-primary-700/50">
                       <td className="py-3 text-primary-200">
@@ -445,7 +437,7 @@ export function VotingPage({
                       </td>
                       <td className="py-3 text-primary-300">
                         {sub.rankings.sort((a, b) => a.rank - b.rank).map(r => {
-                          const opt = ballotOptionsMap.get(r.optionId) ?? optionsMap.get(r.optionId);
+                          const opt = ballotOptionsMap.get(r.optionId);
                           return `${r.rank}: ${opt?.title || 'Unknown'}`;
                         }).join(' → ')}
                       </td>
@@ -467,54 +459,3 @@ export function VotingPage({
   );
 }
 
-// RCV Calculation function for simulation
-function calculateRCVResult(
-  options: BallotOption[],
-  submissions: BallotSubmission[]
-): RCVResult {
-  const rounds: { roundNumber: number; eliminatedOptionId?: string; voteDistribution: Record<string, number>; threshold: number; winner?: string; totalVotes: number }[] = [];
-  let currentOptions = [...options];
-  let currentRankings = submissions.map(sub => [...sub.rankings].sort((a, b) => a.rank - b.rank));
-
-  const totalVotes = submissions.length;
-  const threshold = totalVotes / 2;
-
-  let roundNumber = 0;
-  let winner: BallotOption | undefined;
-
-  while (!winner && currentOptions.length > 1 && roundNumber < 10) {
-    roundNumber++;
-
-    const voteDistribution: Record<string, number> = {};
-    currentOptions.forEach(opt => voteDistribution[opt.id] = 0);
-
-    currentRankings.forEach(rankings => {
-      const firstChoice = rankings[0];
-      if (firstChoice && Object.prototype.hasOwnProperty.call(voteDistribution, firstChoice.optionId)) {
-        voteDistribution[firstChoice.optionId]++;
-      }
-    });
-
-    const maxVotes = Math.max(...Object.values(voteDistribution));
-    if (maxVotes > threshold) {
-      const winnerId = Object.keys(voteDistribution).find(id => voteDistribution[id] === maxVotes);
-      winner = currentOptions.find(opt => opt.id === winnerId);
-      rounds.push({ roundNumber, voteDistribution, threshold, winner: winnerId, totalVotes });
-      break;
-    }
-
-    const minVotes = Math.min(...Object.values(voteDistribution));
-    const loserId = Object.keys(voteDistribution).find(id => voteDistribution[id] === minVotes)!;
-
-    currentOptions = currentOptions.filter(opt => opt.id !== loserId);
-    currentRankings = currentRankings.map(rankings =>
-      rankings.filter(r => r.optionId !== loserId)
-    ).filter(rankings => rankings.length > 0);
-
-    rounds.push({ roundNumber, eliminatedOptionId: loserId, voteDistribution, threshold, totalVotes });
-  }
-
-  if (!winner) winner = currentOptions[0];
-
-  return { rounds, winner: winner!, totalVotes, completedAt: new Date() };
-}

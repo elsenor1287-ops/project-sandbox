@@ -21,6 +21,17 @@ import {
 
 const LAW1_RULES = PROTOCOL_RULES.filter(rule => rule.law === 1);
 
+const escapeRegExp = (string: string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+const COMPILED_LAW1_RULES = LAW1_RULES.map(rule => {
+  const pattern = rule.keywords.map(kw => escapeRegExp(kw.toLowerCase())).join('|');
+  return {
+    name: rule.name,
+    regex: new RegExp(pattern, 'g'),
+    keywordsMap: new Map(rule.keywords.map(kw => [kw.toLowerCase(), kw]))
+  };
+});
+
 const initialState: AppState = {
   currentPage: '/dashboard',
   identity: INITIAL_IDENTITY,
@@ -124,12 +135,17 @@ export function useAppState() {
     const violations: string[] = [];
     const lowerContent = content.toLowerCase();
 
-    LAW1_RULES.forEach(rule => {
-      rule.keywords.forEach(keyword => {
-        if (lowerContent.includes(keyword.toLowerCase())) {
-          violations.push(`${rule.name}: "${keyword}" detected`);
+    COMPILED_LAW1_RULES.forEach(rule => {
+      const matches = lowerContent.match(rule.regex);
+      if (matches) {
+        const uniqueMatches = new Set(matches);
+        for (const match of uniqueMatches) {
+          const originalKw = rule.keywordsMap.get(match);
+          if (originalKw) {
+            violations.push(`${rule.name}: "${originalKw}" detected`);
+          }
         }
-      });
+      }
     });
 
     return violations;
@@ -178,7 +194,7 @@ export function useAppState() {
         } else {
           // Create new write-in option
           const newWriteInOption: BallotOption = {
-            id: `writein-${Date.now()}`,
+            id: `writein-${crypto.randomUUID()}`,
             title: submission.writeIn,
             description: 'Write-in candidate submitted by voters',
             budget: 0,
@@ -255,7 +271,7 @@ export function useAppState() {
           existing.writeInCount = (existing.writeInCount || 0) + count;
         } else {
           newBallotOptions.push({
-            id: `writein-${Date.now()}-${crypto.randomUUID()}`,
+            id: `writein-${crypto.randomUUID()}`,
             title: writeIn,
             description: 'Write-in candidate submitted by voters',
             budget: 0,
@@ -311,8 +327,16 @@ export function calculateRCVResult(
   submissions: BallotSubmission[]
 ): RCVResult {
   const rounds: RCVRound[] = [];
-  let currentOptions = [...options];
-  let currentRankings = submissions.map(sub => [...sub.rankings].sort((a, b) => a.rank - b.rank));
+
+  // Track eliminated option IDs
+  const eliminated = new Set<string>();
+
+  // Extract and pre-sort option IDs per voter
+  const voterPreferences = submissions.map(sub => {
+    return [...sub.rankings]
+      .sort((a, b) => a.rank - b.rank)
+      .map(r => r.optionId);
+  });
 
   const totalVotes = submissions.length;
   const threshold = totalVotes / 2;
@@ -320,21 +344,27 @@ export function calculateRCVResult(
   let roundNumber = 0;
   let winner: BallotOption | undefined;
 
-  while (!winner && currentOptions.length > 1 && roundNumber < 10) {
+  const activeOptionIds = new Set(options.map(opt => opt.id));
+
+  while (!winner && activeOptionIds.size > 1 && roundNumber < 50) {
     roundNumber++;
 
-    // Count first-choice votes
     const voteDistribution: Record<string, number> = {};
-    currentOptions.forEach(opt => {
-      voteDistribution[opt.id] = 0;
-    });
+    for (const optId of activeOptionIds) {
+      voteDistribution[optId] = 0;
+    }
 
-    currentRankings.forEach(rankings => {
-      const firstChoice = rankings[0];
-      if (firstChoice && Object.prototype.hasOwnProperty.call(voteDistribution, firstChoice.optionId)) {
-        voteDistribution[firstChoice.optionId]++;
+    // Find the first valid choice for each voter
+    for (let i = 0; i < voterPreferences.length; i++) {
+      const prefs = voterPreferences[i];
+      for (let j = 0; j < prefs.length; j++) {
+        const optionId = prefs[j];
+        if (!eliminated.has(optionId) && activeOptionIds.has(optionId)) {
+          voteDistribution[optionId]++;
+          break; // Move to next voter
+        }
       }
-    });
+    }
 
     let maxVotes = -Infinity;
     let minVotes = Infinity;
@@ -353,10 +383,8 @@ export function calculateRCVResult(
       }
     }
 
-    // Check for winner
     if (maxVotes > threshold) {
-      winner = currentOptions.find(opt => opt.id === winnerId);
-
+      winner = options.find(opt => opt.id === winnerId);
       rounds.push({
         roundNumber,
         voteDistribution,
@@ -367,13 +395,8 @@ export function calculateRCVResult(
       break;
     }
 
-    // Eliminate loser
-    currentOptions = currentOptions.filter(opt => opt.id !== loserId);
-
-    // Redistribute votes
-    currentRankings = currentRankings.map(rankings =>
-      rankings.filter(r => r.optionId !== loserId)
-    ).filter(rankings => rankings.length > 0);
+    eliminated.add(loserId!);
+    activeOptionIds.delete(loserId!);
 
     rounds.push({
       roundNumber,
@@ -385,13 +408,9 @@ export function calculateRCVResult(
   }
 
   if (!winner) {
-    winner = currentOptions[0];
+    const remainingIds = Array.from(activeOptionIds);
+    winner = options.find(opt => opt.id === remainingIds[0]) || options[0];
   }
 
-  return {
-    rounds,
-    winner: winner!,
-    totalVotes,
-    completedAt: new Date(),
-  };
+  return { rounds, winner: winner!, totalVotes, completedAt: new Date() };
 }
