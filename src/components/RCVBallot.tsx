@@ -473,8 +473,16 @@ function calculateRCVResult(
   submissions: BallotSubmission[]
 ): RCVResult {
   const rounds: { roundNumber: number; eliminatedOptionId?: string; voteDistribution: Record<string, number>; threshold: number; winner?: string; totalVotes: number }[] = [];
-  let currentOptions = [...options];
-  let currentRankings = submissions.map(sub => [...sub.rankings].sort((a, b) => a.rank - b.rank));
+
+  // Track eliminated option IDs
+  const eliminated = new Set<string>();
+
+  // Extract and pre-sort option IDs per voter
+  const voterPreferences = submissions.map(sub => {
+    return [...sub.rankings]
+      .sort((a, b) => a.rank - b.rank)
+      .map(r => r.optionId);
+  });
 
   const totalVotes = submissions.length;
   const threshold = totalVotes / 2;
@@ -482,39 +490,74 @@ function calculateRCVResult(
   let roundNumber = 0;
   let winner: BallotOption | undefined;
 
-  while (!winner && currentOptions.length > 1 && roundNumber < 10) {
+  const activeOptionIds = new Set(options.map(opt => opt.id));
+
+  while (!winner && activeOptionIds.size > 1 && roundNumber < 50) {
     roundNumber++;
 
     const voteDistribution: Record<string, number> = {};
-    currentOptions.forEach(opt => voteDistribution[opt.id] = 0);
+    for (const optId of activeOptionIds) {
+      voteDistribution[optId] = 0;
+    }
 
-    currentRankings.forEach(rankings => {
-      const firstChoice = rankings[0];
-      if (firstChoice && Object.prototype.hasOwnProperty.call(voteDistribution, firstChoice.optionId)) {
-        voteDistribution[firstChoice.optionId]++;
+    // Find the first valid choice for each voter
+    for (let i = 0; i < voterPreferences.length; i++) {
+      const prefs = voterPreferences[i];
+      for (let j = 0; j < prefs.length; j++) {
+        const optionId = prefs[j];
+        // Only count if the option hasn't been eliminated AND it's a valid option
+        if (!eliminated.has(optionId) && activeOptionIds.has(optionId)) {
+          voteDistribution[optionId]++;
+          break; // Move to next voter since we found their top valid choice
+        }
       }
-    });
+    }
 
-    const maxVotes = Math.max(...Object.values(voteDistribution));
+    let maxVotes = -Infinity;
+    let minVotes = Infinity;
+    let winnerId: string | undefined;
+    let loserId: string | undefined;
+
+    for (const id in voteDistribution) {
+      const votes = voteDistribution[id];
+      if (votes > maxVotes) {
+        maxVotes = votes;
+        winnerId = id;
+      }
+      if (votes < minVotes) {
+        minVotes = votes;
+        loserId = id;
+      }
+    }
+
     if (maxVotes > threshold) {
-      const winnerId = Object.keys(voteDistribution).find(id => voteDistribution[id] === maxVotes);
-      winner = currentOptions.find(opt => opt.id === winnerId);
-      rounds.push({ roundNumber, voteDistribution, threshold, winner: winnerId, totalVotes });
+      winner = options.find(opt => opt.id === winnerId);
+      rounds.push({
+        roundNumber,
+        voteDistribution,
+        threshold,
+        winner: winnerId,
+        totalVotes,
+      });
       break;
     }
 
-    const minVotes = Math.min(...Object.values(voteDistribution));
-    const loserId = Object.keys(voteDistribution).find(id => voteDistribution[id] === minVotes)!;
+    eliminated.add(loserId!);
+    activeOptionIds.delete(loserId!);
 
-    currentOptions = currentOptions.filter(opt => opt.id !== loserId);
-    currentRankings = currentRankings.map(rankings =>
-      rankings.filter(r => currentOptions.some(opt => opt.id === r.optionId))
-    );
-
-    rounds.push({ roundNumber, eliminatedOptionId: loserId, voteDistribution, threshold, totalVotes });
+    rounds.push({
+      roundNumber,
+      eliminatedOptionId: loserId,
+      voteDistribution,
+      threshold,
+      totalVotes,
+    });
   }
 
-  if (!winner) winner = currentOptions[0];
+  if (!winner) {
+    const remainingIds = Array.from(activeOptionIds);
+    winner = options.find(opt => opt.id === remainingIds[0]) || options[0];
+  }
 
   return { rounds, winner: winner!, totalVotes, completedAt: new Date() };
 }
