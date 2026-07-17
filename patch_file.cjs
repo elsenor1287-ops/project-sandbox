@@ -1,4 +1,6 @@
-import { renderHook, act } from '@testing-library/react';
+const fs = require('fs');
+
+const code = `import { renderHook, act } from '@testing-library/react';
 import { useAppState, calculateRCVResult } from './useAppState';
 import { describe, it, expect } from 'vitest';
 import { BallotOption, BallotSubmission } from '../types';
@@ -133,10 +135,6 @@ describe('useAppState', () => {
 
     it('should handle generating more votes than available accounts', () => {
       const { result } = renderHook(() => useAppState());
-
-      act(() => {
-        result.current.resetVoting();
-      });
       const totalAccounts = result.current.state.testAccounts.length;
 
       act(() => {
@@ -149,10 +147,6 @@ describe('useAppState', () => {
 
     it('should properly format ballot submissions with random rankings', () => {
       const { result } = renderHook(() => useAppState());
-
-      act(() => {
-        result.current.resetVoting();
-      });
       act(() => {
         result.current.generateMockVotes(1);
       });
@@ -171,10 +165,6 @@ describe('useAppState', () => {
 
     it('should correctly process generated write-ins', () => {
       const { result } = renderHook(() => useAppState());
-
-      act(() => {
-        result.current.resetVoting();
-      });
       const originalRandom = Math.random;
       let calls = 0;
       Math.random = () => {
@@ -293,3 +283,7 @@ describe('calculateRCVResult', () => {
     expect(result.winner).toBeDefined();
   });
 });
+`;
+
+fs.writeFileSync('src/hooks/useAppState.test.ts', code);
+console.log("Rewrote test file.");
