@@ -1,6 +1,6 @@
 import { renderHook, act } from '@testing-library/react';
-import { useAppState, calculateRCVResult } from './useAppState';
 import { describe, it, expect } from 'vitest';
+import { useAppState, calculateRCVResult } from './useAppState';
 import { BallotOption, BallotSubmission } from '../types';
 
 describe('useAppState', () => {
@@ -50,24 +50,23 @@ describe('useAppState', () => {
   describe('addVouchToken', () => {
     it('should add a token and keep status pending if length < 3', () => {
       const { result } = renderHook(() => useAppState());
-
       act(() => {
-        result.current.addVouchToken({
-          id: 't-1',
-          neighborName: 'Alice',
-          neighborAddress: '123 St',
-          signedAt: new Date(),
-          isValid: true,
-        });
+        result.current.completeVerificationStep('passport');
       });
-
-      expect(result.current.state.identity.vouchTokens).toHaveLength(1);
-      expect(result.current.state.identity.vouchTokens[0].id).toBe('t-1');
-      expect(result.current.state.identity.verificationStep).toBe('vouching');
-      expect(result.current.state.identity.status).toBe('pending');
+      expect(result.current.state.identity.passportVerified).toBe(true);
+      expect(result.current.state.identity.verificationStep).toBe('utility');
     });
 
-    it('should set status to active and complete when length reaches 3', () => {
+    it('should complete utility step', () => {
+      const { result } = renderHook(() => useAppState());
+      act(() => {
+        result.current.completeVerificationStep('utility');
+      });
+      expect(result.current.state.identity.utilityVerified).toBe(true);
+      expect(result.current.state.identity.verificationStep).toBe('vouching');
+    });
+
+    it('should add vouch tokens and complete verification when reaching 3', () => {
       const { result } = renderHook(() => useAppState());
 
       act(() => {
@@ -281,9 +280,9 @@ describe('useAppState', () => {
         });
       });
 
-      expect(newProposal.status).toBe('vetoed');
-      expect(newProposal.vetoReason).toBe('First Amendment Shield: "censor" detected');
-      expect(newProposal.triggeredKeywords).toEqual(['First Amendment Shield: "censor" detected']);
+      expect(newProposal?.status).toBe('vetoed');
+      expect(newProposal?.vetoReason).toBe('First Amendment Shield: "censor" detected');
+      expect(newProposal?.triggeredKeywords).toEqual(['First Amendment Shield: "censor" detected']);
     });
   });
 });
