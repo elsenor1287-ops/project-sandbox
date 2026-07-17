@@ -370,13 +370,10 @@ export function calculateRCVResult(
     // Eliminate loser
     currentOptions = currentOptions.filter(opt => opt.id !== loserId);
 
-    // Optimization: Create a Set of current option IDs for O(1) lookup
-    const currentOptionIds = new Set(currentOptions.map(opt => opt.id));
-
     // Redistribute votes
     currentRankings = currentRankings.map(rankings =>
-      rankings.filter(r => currentOptionIds.has(r.optionId))
-    );
+      rankings.filter(r => r.optionId !== loserId)
+    ).filter(rankings => rankings.length > 0);
 
     rounds.push({
       roundNumber,

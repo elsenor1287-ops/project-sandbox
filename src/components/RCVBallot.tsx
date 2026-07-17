@@ -508,8 +508,8 @@ function calculateRCVResult(
 
     currentOptions = currentOptions.filter(opt => opt.id !== loserId);
     currentRankings = currentRankings.map(rankings =>
-      rankings.filter(r => currentOptions.some(opt => opt.id === r.optionId))
-    );
+      rankings.filter(r => r.optionId !== loserId)
+    ).filter(rankings => rankings.length > 0);
 
     rounds.push({ roundNumber, eliminatedOptionId: loserId, voteDistribution, threshold, totalVotes });
   }
