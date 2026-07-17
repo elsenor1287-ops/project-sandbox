@@ -178,6 +178,7 @@ export function useAppState() {
     setState(prev => {
       const newSubmission: BallotSubmission = {
         ...submission,
+        rankings: [...submission.rankings].sort((a, b) => a.rank - b.rank),
         submittedAt: new Date(),
       };
 
@@ -331,11 +332,9 @@ export function calculateRCVResult(
   // Track eliminated option IDs
   const eliminated = new Set<string>();
 
-  // Extract and pre-sort option IDs per voter
+  // Extract option IDs per voter (rankings are pre-sorted during submission)
   const voterPreferences = submissions.map(sub => {
-    return [...sub.rankings]
-      .sort((a, b) => a.rank - b.rank)
-      .map(r => r.optionId);
+    return sub.rankings.map(r => r.optionId);
   });
 
   const totalVotes = submissions.length;
