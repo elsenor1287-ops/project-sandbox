@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Code2,
   Shield,
@@ -22,15 +22,16 @@ interface CompilerPageProps {
   onCheckViolations: (content: string) => string[];
 }
 
-const law1Rules = PROTOCOL_RULES.filter(r => r.law === 1);
-const law2Rules = PROTOCOL_RULES.filter(r => r.law === 2);
-const law3Rules = PROTOCOL_RULES.filter(r => r.law === 3);
 
 export function CompilerPage({
   proposals,
   onSubmitProposal,
   onCheckViolations,
 }: CompilerPageProps) {
+  const law1Rules = useMemo(() => PROTOCOL_RULES.filter(r => r.law === 1), []);
+  const law2Rules = useMemo(() => PROTOCOL_RULES.filter(r => r.law === 2), []);
+  const law3Rules = useMemo(() => PROTOCOL_RULES.filter(r => r.law === 3), []);
+
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [selectedTier, setSelectedTier] = useState<'law1_shield' | 'law2_sandbox' | 'law3_dynamic'>(
