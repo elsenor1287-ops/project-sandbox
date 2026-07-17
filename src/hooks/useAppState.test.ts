@@ -4,6 +4,49 @@ import { describe, it, expect } from 'vitest';
 import { BallotOption, BallotSubmission } from '../types';
 
 describe('useAppState', () => {
+  describe('completeVerificationStep', () => {
+    it('should complete passport step', () => {
+      const { result } = renderHook(() => useAppState());
+
+      expect(result.current.state.identity.passportVerified).toBe(false);
+      expect(result.current.state.identity.verificationStep).toBe('passport');
+
+      act(() => {
+        result.current.completeVerificationStep('passport');
+      });
+
+      expect(result.current.state.identity.passportVerified).toBe(true);
+      expect(result.current.state.identity.verificationStep).toBe('utility');
+    });
+
+    it('should complete utility step', () => {
+      const { result } = renderHook(() => useAppState());
+
+      expect(result.current.state.identity.utilityVerified).toBe(false);
+
+      act(() => {
+        result.current.completeVerificationStep('utility');
+      });
+
+      expect(result.current.state.identity.utilityVerified).toBe(true);
+      expect(result.current.state.identity.verificationStep).toBe('vouching');
+    });
+
+    it('should complete vouching step', () => {
+      const { result } = renderHook(() => useAppState());
+
+      expect(result.current.state.identity.status).toBe('pending');
+
+      act(() => {
+        result.current.completeVerificationStep('vouching');
+      });
+
+      expect(result.current.state.identity.vouchTokens).toHaveLength(3);
+      expect(result.current.state.identity.verificationStep).toBe('complete');
+      expect(result.current.state.identity.status).toBe('active');
+    });
+  });
+
   describe('addVouchToken', () => {
     it('should add a token and keep status pending if length < 3', () => {
       const { result } = renderHook(() => useAppState());
@@ -185,9 +228,12 @@ describe('useAppState', () => {
     });
   });
 
-  describe('submitProposal', () => {
-    it('compiles a valid proposal without any Law 1 violation keywords', () => {
-      const { result } = renderHook(() => useAppState());
+  it('should declare a winner in the first round if an option has a majority', () => {
+    const submissions: BallotSubmission[] = [
+      { voterId: 'v1', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v2', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v3', rankings: [{ optionId: 'opt2', rank: 1 }], submittedAt: new Date() },
+    ];
 
       let newProposal: any;
       act(() => {
