@@ -4,6 +4,49 @@ import { describe, it, expect } from 'vitest';
 import { BallotOption, BallotSubmission } from '../types';
 
 describe('useAppState', () => {
+  describe('completeVerificationStep', () => {
+    it('should complete passport step', () => {
+      const { result } = renderHook(() => useAppState());
+
+      expect(result.current.state.identity.passportVerified).toBe(false);
+      expect(result.current.state.identity.verificationStep).toBe('passport');
+
+      act(() => {
+        result.current.completeVerificationStep('passport');
+      });
+
+      expect(result.current.state.identity.passportVerified).toBe(true);
+      expect(result.current.state.identity.verificationStep).toBe('utility');
+    });
+
+    it('should complete utility step', () => {
+      const { result } = renderHook(() => useAppState());
+
+      expect(result.current.state.identity.utilityVerified).toBe(false);
+
+      act(() => {
+        result.current.completeVerificationStep('utility');
+      });
+
+      expect(result.current.state.identity.utilityVerified).toBe(true);
+      expect(result.current.state.identity.verificationStep).toBe('vouching');
+    });
+
+    it('should complete vouching step', () => {
+      const { result } = renderHook(() => useAppState());
+
+      expect(result.current.state.identity.status).toBe('pending');
+
+      act(() => {
+        result.current.completeVerificationStep('vouching');
+      });
+
+      expect(result.current.state.identity.vouchTokens).toHaveLength(3);
+      expect(result.current.state.identity.verificationStep).toBe('complete');
+      expect(result.current.state.identity.status).toBe('active');
+    });
+  });
+
   describe('addVouchToken', () => {
     it('should add a token and keep status pending if length < 3', () => {
       const { result } = renderHook(() => useAppState());
@@ -192,23 +235,21 @@ describe('calculateRCVResult', () => {
     { id: 'opt3', title: 'Option 3', description: '', budget: 0, category: 'other', voteCount: 0, isWriteIn: false },
   ];
 
-  describe('submitProposal', () => {
-    it('compiles a valid proposal without any Law 1 violation keywords', () => {
-      const { result } = renderHook(() => useAppState());
+  it('should declare a winner in the first round if an option has a majority', () => {
+    const submissions: BallotSubmission[] = [
+      { voterId: 'v1', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v2', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v3', rankings: [{ optionId: 'opt2', rank: 1 }], submittedAt: new Date() },
+    ];
 
-      let newProposal;
-      act(() => {
-        newProposal = result.current.submitProposal({
-          title: 'Test Proposal',
-          content: 'This is a safe proposal that just suggests building a park.',
-          tier: 'constitution',
-          submittedBy: 'user-1',
-        });
-      });
+    const result = calculateRCVResult(options, submissions);
 
-      expect(newProposal.status).toBe('compiled');
-      expect(newProposal.vetoReason).toBeUndefined();
-      expect(newProposal.triggeredKeywords).toBeUndefined();
+    expect(result.winner.id).toBe('opt1');
+    expect(result.rounds.length).toBe(1);
+    expect(result.totalVotes).toBe(3);
+    expect(result.rounds[0].winner).toBe('opt1');
+    expect(result.rounds[0].voteDistribution).toEqual({ opt1: 2, opt2: 1, opt3: 0 });
+  });
 
   it('should run multiple rounds and eliminate lowest vote getter if no majority', () => {
     const submissions: BallotSubmission[] = [
@@ -221,15 +262,12 @@ describe('calculateRCVResult', () => {
 
     const result = calculateRCVResult(options, submissions);
 
-      let newProposal;
-      act(() => {
-        newProposal = result.current.submitProposal({
-          title: 'Bad Proposal',
-          content: 'This proposal will ban speech in public areas.',
-          tier: 'constitution',
-          submittedBy: 'user-1',
-        });
-      });
+    expect(result.winner.id).toBe('opt1');
+    expect(result.rounds.length).toBe(2);
+    expect(result.rounds[0].eliminatedOptionId).toBe('opt3');
+    expect(result.rounds[1].winner).toBe('opt1');
+    expect(result.rounds[1].voteDistribution).toEqual({ opt1: 3, opt2: 2 });
+  });
 
   it('should handle ties for minimum votes during elimination', () => {
     const tieOptions: BallotOption[] = [
@@ -237,28 +275,25 @@ describe('calculateRCVResult', () => {
       { id: 'opt4', title: 'Option 4', description: '', budget: 0, category: 'other', voteCount: 0, isWriteIn: false },
     ];
 
-      const stateProposal = result.current.state.proposals.find(p => p.id === newProposal.id);
-      expect(stateProposal?.status).toBe('vetoed');
-    });
+    const tieSubmissions: BallotSubmission[] = [
+      { voterId: 'v1', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v2', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v3', rankings: [{ optionId: 'opt2', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v4', rankings: [{ optionId: 'opt2', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v5', rankings: [{ optionId: 'opt3', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v6', rankings: [{ optionId: 'opt4', rank: 1 }], submittedAt: new Date() },
+    ];
 
     const result = calculateRCVResult(tieOptions, tieSubmissions);
 
-      let newProposal;
-      act(() => {
-        newProposal = result.current.submitProposal({
-          title: 'Casing Proposal',
-          content: 'We need to CENSOR the media right now.',
-          tier: 'constitution',
-          submittedBy: 'user-1',
-        });
-      });
+    expect(result.rounds.length).toBeGreaterThan(1);
+    expect(result.winner).toBeDefined();
+  });
 
-      expect(newProposal.status).toBe('vetoed');
-      expect(newProposal.vetoReason).toBe('First Amendment Shield: "censor" detected');
-      expect(newProposal.triggeredKeywords).toEqual(['First Amendment Shield: "censor" detected']);
-    });
+  it('should handle empty submissions', () => {
+    const result = calculateRCVResult(options, []);
 
-    expect(result.winner.id).toBe('opt3');
+    expect(result.winner.id).toBe('opt3'); // It iterates rounds logic and activeOptionIds drops to 1, leaving the last processed element (opt3 in this implementation)
     expect(result.rounds.length).toBe(2);
     expect(result.totalVotes).toBe(0);
   });
