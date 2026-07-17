@@ -81,7 +81,10 @@ describe('useAppState', () => {
 
       // No new option should be created
       expect(result.current.state.ballotOptions).toHaveLength(initialOptionsCount);
-import { describe, it, expect } from 'vitest';
+    });
+  });
+});
+
 import { calculateRCVResult } from './useAppState';
 import { BallotOption, BallotSubmission } from '../types';
 
@@ -177,11 +180,60 @@ describe('calculateRCVResult', () => {
     // It should eliminate options until one remains or majority is reached.
     const result = calculateRCVResult(options, submissions);
     expect(result.winner).toBeDefined();
-import { renderHook } from '@testing-library/react';
-import { useAppState } from './useAppState';
-import { describe, it, expect } from 'vitest';
+  });
+});
 
 describe('useAppState', () => {
+  describe('runRCVSimulation', () => {
+    it('should calculate and set rcvResult when runRCVSimulation is called', () => {
+      const { result } = renderHook(() => useAppState());
+
+      // Setup some mock submissions
+      act(() => {
+        result.current.generateMockVotes(5);
+      });
+
+      expect(result.current.state.rcvResult).toBeNull();
+
+      act(() => {
+        result.current.runRCVSimulation();
+      });
+
+      expect(result.current.state.rcvResult).not.toBeNull();
+      expect(result.current.state.rcvResult).toHaveProperty('winner');
+      expect(result.current.state.rcvResult).toHaveProperty('rounds');
+      expect(result.current.state.rcvResult).toHaveProperty('totalVotes');
+      expect(result.current.state.rcvResult).toHaveProperty('completedAt');
+      expect(result.current.state.rcvResult?.totalVotes).toBeGreaterThan(0);
+
+      // Cleanup shared mock state
+      act(() => {
+        result.current.resetVoting();
+      });
+    });
+
+    it('should handle zero submissions gracefully', () => {
+      const { result } = renderHook(() => useAppState());
+
+      expect(result.current.state.rcvResult).toBeNull();
+      expect(result.current.state.ballotSubmissions.length).toBe(0);
+
+      act(() => {
+        result.current.runRCVSimulation();
+      });
+
+      expect(result.current.state.rcvResult).not.toBeNull();
+      expect(result.current.state.rcvResult?.totalVotes).toBe(0);
+      expect(result.current.state.rcvResult?.rounds.length).toBeGreaterThan(0);
+      expect(result.current.state.rcvResult?.winner).toBeDefined();
+
+      // Cleanup shared mock state
+      act(() => {
+        result.current.resetVoting();
+      });
+    });
+  });
+
   describe('checkLaw1Violations', () => {
     it('returns empty array when there are no violations', () => {
       const { result } = renderHook(() => useAppState());
