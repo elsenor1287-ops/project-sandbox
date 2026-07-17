@@ -101,4 +101,31 @@ describe('useAppState', () => {
       expect(result.current.state.identity.frozenReason).toBe('third reason');
     });
   });
+
+  describe('runRCVSimulation', () => {
+    it('should correctly calculate and set the RCV result based on current ballot submissions', () => {
+      const { result } = renderHook(() => useAppState());
+
+      // Initial state should be null
+      expect(result.current.state.rcvResult).toBeNull();
+
+      act(() => {
+        result.current.generateMockVotes(5);
+      });
+
+      act(() => {
+        result.current.runRCVSimulation();
+      });
+
+      // The state should have been updated with a calculation result
+      expect(result.current.state.rcvResult).not.toBeNull();
+      expect(result.current.state.rcvResult?.winner).toBeDefined();
+      expect(result.current.state.rcvResult?.rounds).toBeDefined();
+
+      // Reset voting state to avoid bleeding into other tests
+      act(() => {
+        result.current.resetVoting();
+      });
+    });
+  });
 });
