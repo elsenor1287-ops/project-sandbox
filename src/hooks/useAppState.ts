@@ -352,25 +352,31 @@ export function calculateRCVResult(
 
   const activeOptionIds = new Set(options.map(opt => opt.id));
 
+    // A voter's active preference index
+  const activePrefs = new Int32Array(submissions.length);
+
+
+  // Initialize vote counts for the first round
+  const voteDistribution: Record<string, number> = {};
+  for (const optId of activeOptionIds) {
+    voteDistribution[optId] = 0;
+  }
+
+  for (let i = 0; i < voterPreferences.length; i++) {
+     const prefs = voterPreferences[i];
+     // Find their first valid preference (might not be index 0 if they voted for an invalid candidate)
+     let j = 0;
+     while (j < prefs.length && !activeOptionIds.has(prefs[j])) {
+         j++;
+     }
+     activePrefs[i] = j;
+     if(j < prefs.length) {
+         voteDistribution[prefs[j]]++;
+     }
+  }
+
   while (!winner && activeOptionIds.size > 1 && roundNumber < 50) {
     roundNumber++;
-
-    const voteDistribution: Record<string, number> = {};
-    for (const optId of activeOptionIds) {
-      voteDistribution[optId] = 0;
-    }
-
-    // Find the first valid choice for each voter
-    for (let i = 0; i < voterPreferences.length; i++) {
-      const prefs = voterPreferences[i];
-      for (let j = 0; j < prefs.length; j++) {
-        const optionId = prefs[j];
-        if (!eliminated.has(optionId) && activeOptionIds.has(optionId)) {
-          voteDistribution[optionId]++;
-          break; // Move to next voter
-        }
-      }
-    }
 
     let maxVotes = -Infinity;
     let minVotes = Infinity;
@@ -393,7 +399,7 @@ export function calculateRCVResult(
       winner = options.find(opt => opt.id === winnerId);
       rounds.push({
         roundNumber,
-        voteDistribution,
+        voteDistribution: { ...voteDistribution },
         threshold,
         winner: winnerId,
         totalVotes,
@@ -401,16 +407,38 @@ export function calculateRCVResult(
       break;
     }
 
-    eliminated.add(loserId!);
-    activeOptionIds.delete(loserId!);
-
+    // Record round BEFORE we mutate voteDistribution
     rounds.push({
       roundNumber,
       eliminatedOptionId: loserId,
-      voteDistribution,
+      voteDistribution: { ...voteDistribution },
       threshold,
       totalVotes,
     });
+
+    eliminated.add(loserId!);
+    activeOptionIds.delete(loserId!);
+    delete voteDistribution[loserId!];
+
+    // Reassign votes for users whose candidate was eliminated
+    for (let i = 0; i < voterPreferences.length; i++) {
+      const prefs = voterPreferences[i];
+      let currentPrefIndex = activePrefs[i];
+
+      // If their current active choice is the one that just lost, find their next valid choice
+      if (currentPrefIndex < prefs.length && prefs[currentPrefIndex] === loserId) {
+          currentPrefIndex++;
+          // Skip any option that is not currently active
+          while(currentPrefIndex < prefs.length && !activeOptionIds.has(prefs[currentPrefIndex])) {
+              currentPrefIndex++;
+          }
+          activePrefs[i] = currentPrefIndex;
+
+          if(currentPrefIndex < prefs.length) {
+              voteDistribution[prefs[currentPrefIndex]]++;
+          }
+      }
+    }
   }
 
   if (!winner) {
