@@ -1,54 +1,53 @@
-import { renderHook, act } from '@testing-library/react';
 import { useAppState, calculateRCVResult } from './useAppState';
 import { describe, it, expect } from 'vitest';
+import { renderHook, act } from '@testing-library/react';
 import { BallotOption, BallotSubmission } from '../types';
 
 describe('useAppState', () => {
   describe('addVouchToken', () => {
-    it('should add a token and keep status pending if length < 3', () => {
+    it('should add a vouch token and keep status pending if under 3 tokens', () => {
       const { result } = renderHook(() => useAppState());
 
+      expect(result.current.state.identity.vouchTokens).toHaveLength(0);
+      expect(result.current.state.identity.verificationStep).toBe('passport');
+      expect(result.current.state.identity.status).toBe('pending');
+
+      const mockToken = {
+        id: 'token-1',
+        neighborName: 'John Doe',
+        neighborAddress: '123 Main St',
+        signedAt: new Date(),
+        isValid: true,
+      };
+
       act(() => {
-        result.current.addVouchToken({
-          id: 't-1',
-          neighborName: 'Alice',
-          neighborAddress: '123 St',
-          signedAt: new Date(),
-          isValid: true,
-        });
+        result.current.addVouchToken(mockToken);
       });
 
       expect(result.current.state.identity.vouchTokens).toHaveLength(1);
-      expect(result.current.state.identity.vouchTokens[0].id).toBe('t-1');
+      expect(result.current.state.identity.vouchTokens[0]).toEqual(mockToken);
       expect(result.current.state.identity.verificationStep).toBe('vouching');
       expect(result.current.state.identity.status).toBe('pending');
     });
 
-    it('should set status to active and complete when length reaches 3', () => {
+    it('should complete verification and set status to active on 3rd token', () => {
       const { result } = renderHook(() => useAppState());
 
+      const mockToken1 = { id: 'token-1', neighborName: 'John', neighborAddress: '123 Main', signedAt: new Date(), isValid: true };
+      const mockToken2 = { id: 'token-2', neighborName: 'Jane', neighborAddress: '456 Elm', signedAt: new Date(), isValid: true };
+      const mockToken3 = { id: 'token-3', neighborName: 'Bob', neighborAddress: '789 Oak', signedAt: new Date(), isValid: true };
+
       act(() => {
-        result.current.addVouchToken({
-          id: 't-1',
-          neighborName: 'Alice',
-          neighborAddress: '123 St',
-          signedAt: new Date(),
-          isValid: true,
-        });
-        result.current.addVouchToken({
-          id: 't-2',
-          neighborName: 'Bob',
-          neighborAddress: '456 St',
-          signedAt: new Date(),
-          isValid: true,
-        });
-        result.current.addVouchToken({
-          id: 't-3',
-          neighborName: 'Charlie',
-          neighborAddress: '789 St',
-          signedAt: new Date(),
-          isValid: true,
-        });
+        result.current.addVouchToken(mockToken1);
+        result.current.addVouchToken(mockToken2);
+      });
+
+      expect(result.current.state.identity.vouchTokens).toHaveLength(2);
+      expect(result.current.state.identity.verificationStep).toBe('vouching');
+      expect(result.current.state.identity.status).toBe('pending');
+
+      act(() => {
+        result.current.addVouchToken(mockToken3);
       });
 
       expect(result.current.state.identity.vouchTokens).toHaveLength(3);
@@ -72,6 +71,52 @@ describe('useAppState', () => {
     });
   });
 
+  describe('triggerFraudStrike', () => {
+    it('should increment fraud strikes by 1', () => {
+      const { result } = renderHook(() => useAppState());
+
+      expect(result.current.state.identity.fraudStrikes).toBe(0);
+
+      act(() => {
+        result.current.triggerFraudStrike('test reason');
+      });
+
+      expect(result.current.state.identity.fraudStrikes).toBe(1);
+      expect(result.current.state.identity.status).toBe('pending');
+      expect(result.current.state.identity.frozenAt).toBeUndefined();
+      expect(result.current.state.identity.frozenReason).toBeUndefined();
+    });
+
+    it('should freeze account on second strike', () => {
+      const { result } = renderHook(() => useAppState());
+
+      act(() => {
+        result.current.triggerFraudStrike('first reason');
+        result.current.triggerFraudStrike('second reason');
+      });
+
+      expect(result.current.state.identity.fraudStrikes).toBe(2);
+      expect(result.current.state.identity.status).toBe('frozen');
+      expect(result.current.state.identity.frozenAt).toBeInstanceOf(Date);
+      expect(result.current.state.identity.frozenReason).toBe('second reason');
+    });
+
+    it('should deactivate account on third strike', () => {
+      const { result } = renderHook(() => useAppState());
+
+      act(() => {
+        result.current.triggerFraudStrike('first reason');
+        result.current.triggerFraudStrike('second reason');
+        result.current.triggerFraudStrike('third reason');
+      });
+
+      expect(result.current.state.identity.fraudStrikes).toBe(3);
+      expect(result.current.state.identity.status).toBe('deactivated');
+      expect(result.current.state.identity.frozenAt).toBeInstanceOf(Date);
+      expect(result.current.state.identity.frozenReason).toBe('third reason');
+    });
+  });
+
   describe('submitBallot', () => {
     it('should add a ballot submission and create a new write-in option if it does not exist', () => {
       const { result } = renderHook(() => useAppState());
@@ -90,6 +135,7 @@ describe('useAppState', () => {
       expect(result.current.state.ballotSubmissions[0].voterId).toBe('voter-1');
       expect(result.current.state.ballotSubmissions[0].writeIn).toBe('John Doe');
 
+      // Check if the write-in option was created
       const writeInOption = result.current.state.ballotOptions.find(
         (opt) => opt.title === 'John Doe' && opt.isWriteIn
       );
@@ -110,7 +156,7 @@ describe('useAppState', () => {
       const submission2 = {
         voterId: 'voter-2',
         rankings: [],
-        writeIn: 'jane doe',
+        writeIn: 'jane doe', // case-insensitive check
       };
 
       act(() => {
@@ -120,6 +166,7 @@ describe('useAppState', () => {
 
       expect(result.current.state.ballotSubmissions).toHaveLength(2);
 
+      // Check if the write-in option was created and count incremented
       const writeInOptions = result.current.state.ballotOptions.filter(
         (opt) => opt.title.toLowerCase() === 'jane doe' && opt.isWriteIn
       );
@@ -146,6 +193,7 @@ describe('useAppState', () => {
       expect(result.current.state.ballotSubmissions[0].voterId).toBe('voter-1');
       expect(result.current.state.ballotSubmissions[0].writeIn).toBeUndefined();
 
+      // No new option should be created
       expect(result.current.state.ballotOptions).toHaveLength(initialOptionsCount);
     });
   });
@@ -185,6 +233,7 @@ describe('useAppState', () => {
   });
 });
 
+
 describe('calculateRCVResult', () => {
   const options: BallotOption[] = [
     { id: 'opt1', title: 'Option 1', description: '', budget: 0, category: 'other', voteCount: 0, isWriteIn: false },
@@ -192,23 +241,21 @@ describe('calculateRCVResult', () => {
     { id: 'opt3', title: 'Option 3', description: '', budget: 0, category: 'other', voteCount: 0, isWriteIn: false },
   ];
 
-  describe('submitProposal', () => {
-    it('compiles a valid proposal without any Law 1 violation keywords', () => {
-      const { result } = renderHook(() => useAppState());
+  it('should declare a winner in the first round if an option has a majority', () => {
+    const submissions: BallotSubmission[] = [
+      { voterId: 'v1', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v2', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v3', rankings: [{ optionId: 'opt2', rank: 1 }], submittedAt: new Date() },
+    ];
 
-      let newProposal;
-      act(() => {
-        newProposal = result.current.submitProposal({
-          title: 'Test Proposal',
-          content: 'This is a safe proposal that just suggests building a park.',
-          tier: 'constitution',
-          submittedBy: 'user-1',
-        });
-      });
+    const result = calculateRCVResult(options, submissions);
 
-      expect(newProposal.status).toBe('compiled');
-      expect(newProposal.vetoReason).toBeUndefined();
-      expect(newProposal.triggeredKeywords).toBeUndefined();
+    expect(result.winner.id).toBe('opt1');
+    expect(result.rounds.length).toBe(1);
+    expect(result.totalVotes).toBe(3);
+    expect(result.rounds[0].winner).toBe('opt1');
+    expect(result.rounds[0].voteDistribution).toEqual({ opt1: 2, opt2: 1, opt3: 0 });
+  });
 
   it('should run multiple rounds and eliminate lowest vote getter if no majority', () => {
     const submissions: BallotSubmission[] = [
@@ -221,15 +268,12 @@ describe('calculateRCVResult', () => {
 
     const result = calculateRCVResult(options, submissions);
 
-      let newProposal;
-      act(() => {
-        newProposal = result.current.submitProposal({
-          title: 'Bad Proposal',
-          content: 'This proposal will ban speech in public areas.',
-          tier: 'constitution',
-          submittedBy: 'user-1',
-        });
-      });
+    expect(result.winner.id).toBe('opt1');
+    expect(result.rounds.length).toBe(2);
+    expect(result.rounds[0].eliminatedOptionId).toBe('opt3');
+    expect(result.rounds[1].winner).toBe('opt1');
+    expect(result.rounds[1].voteDistribution).toEqual({ opt1: 3, opt2: 2 });
+  });
 
   it('should handle ties for minimum votes during elimination', () => {
     const tieOptions: BallotOption[] = [
@@ -237,26 +281,23 @@ describe('calculateRCVResult', () => {
       { id: 'opt4', title: 'Option 4', description: '', budget: 0, category: 'other', voteCount: 0, isWriteIn: false },
     ];
 
-      const stateProposal = result.current.state.proposals.find(p => p.id === newProposal.id);
-      expect(stateProposal?.status).toBe('vetoed');
-    });
+    const tieSubmissions: BallotSubmission[] = [
+      { voterId: 'v1', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v2', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v3', rankings: [{ optionId: 'opt2', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v4', rankings: [{ optionId: 'opt2', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v5', rankings: [{ optionId: 'opt3', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v6', rankings: [{ optionId: 'opt4', rank: 1 }], submittedAt: new Date() },
+    ];
 
     const result = calculateRCVResult(tieOptions, tieSubmissions);
 
-      let newProposal;
-      act(() => {
-        newProposal = result.current.submitProposal({
-          title: 'Casing Proposal',
-          content: 'We need to CENSOR the media right now.',
-          tier: 'constitution',
-          submittedBy: 'user-1',
-        });
-      });
+    expect(result.rounds.length).toBeGreaterThan(1);
+    expect(result.winner).toBeDefined();
+  });
 
-      expect(newProposal.status).toBe('vetoed');
-      expect(newProposal.vetoReason).toBe('First Amendment Shield: "censor" detected');
-      expect(newProposal.triggeredKeywords).toEqual(['First Amendment Shield: "censor" detected']);
-    });
+  it('should handle empty submissions', () => {
+    const result = calculateRCVResult(options, []);
 
     expect(result.winner.id).toBe('opt3');
     expect(result.rounds.length).toBe(2);
@@ -272,5 +313,41 @@ describe('calculateRCVResult', () => {
 
     const result = calculateRCVResult(options, submissions);
     expect(result.winner).toBeDefined();
+  });
+});
+
+describe('useAppState', () => {
+  describe('checkLaw1Violations', () => {
+    it('returns empty array when there are no violations', () => {
+      const { result } = renderHook(() => useAppState());
+      const violations = result.current.checkLaw1Violations('We should build a new park in the community.');
+      expect(violations).toEqual([]);
+    });
+
+    it('detects a single violation', () => {
+      const { result } = renderHook(() => useAppState());
+      const violations = result.current.checkLaw1Violations('The city will ban speech on weekends.');
+      expect(violations).toEqual(['First Amendment Shield: "ban speech" detected']);
+    });
+
+    it('detects violations ignoring case (case insensitivity)', () => {
+      const { result } = renderHook(() => useAppState());
+      const violations = result.current.checkLaw1Violations('We should BAn SPeeCh immediately.');
+      expect(violations).toEqual(['First Amendment Shield: "ban speech" detected']);
+    });
+
+    it('detects multiple violations', () => {
+      const { result } = renderHook(() => useAppState());
+      const violations = result.current.checkLaw1Violations('We will ban speech and confiscate guns from citizens.');
+      expect(violations).toContain('First Amendment Shield: "ban speech" detected');
+      expect(violations).toContain('Second Amendment Shield: "confiscate guns" detected');
+      expect(violations.length).toBe(2);
+    });
+
+    it('detects partial/sub-string matches correctly', () => {
+      const { result } = renderHook(() => useAppState());
+      const violations = result.current.checkLaw1Violations('If they implement a censorship board...');
+      expect(violations).toEqual(['First Amendment Shield: "censor" detected']);
+    });
   });
 });
