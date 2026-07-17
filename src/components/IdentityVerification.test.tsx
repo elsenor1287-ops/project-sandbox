@@ -163,4 +163,50 @@ describe('IdentityVerification', () => {
 
     expect(screen.getByText(/Test freeze reason/)).toBeInTheDocument();
   });
+
+  it('renders active state appropriately', () => {
+    const activeIdentity: IdentityState = {
+      ...defaultIdentity,
+      status: 'active',
+    };
+
+    render(
+      <IdentityPage
+        identity={activeIdentity}
+        onCompleteStep={vi.fn()}
+        onTriggerFraud={vi.fn()}
+        onFreezeAccount={vi.fn()}
+        onResetIdentity={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('Active')).toBeInTheDocument();
+  });
+
+  it('renders deactivated state appropriately and disables buttons', () => {
+    const deactivatedIdentity: IdentityState = {
+      ...defaultIdentity,
+      status: 'deactivated',
+    };
+
+    render(
+      <IdentityPage
+        identity={deactivatedIdentity}
+        onCompleteStep={vi.fn()}
+        onTriggerFraud={vi.fn()}
+        onFreezeAccount={vi.fn()}
+        onResetIdentity={vi.fn()}
+      />
+    );
+
+    expect(screen.getByText('Deactivated')).toBeInTheDocument();
+
+    act(() => { fireEvent.click(screen.getByText('Fraud Testing Suite')); });
+
+    const triggerStrikeBtn = screen.getByRole('button', { name: /Trigger Strike/i });
+    expect(triggerStrikeBtn).toBeDisabled();
+
+    const instantFreezeBtn = screen.getByRole('button', { name: /Instant Freeze/i });
+    expect(instantFreezeBtn).toBeDisabled();
+  });
 });
