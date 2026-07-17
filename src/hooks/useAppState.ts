@@ -327,8 +327,16 @@ export function calculateRCVResult(
   submissions: BallotSubmission[]
 ): RCVResult {
   const rounds: RCVRound[] = [];
-  let currentOptions = [...options];
-  let currentRankings = submissions.map(sub => [...sub.rankings].sort((a, b) => a.rank - b.rank));
+
+  // Track eliminated option IDs
+  const eliminated = new Set<string>();
+
+  // Extract and pre-sort option IDs per voter
+  const voterPreferences = submissions.map(sub => {
+    return [...sub.rankings]
+      .sort((a, b) => a.rank - b.rank)
+      .map(r => r.optionId);
+  });
 
   const totalVotes = submissions.length;
   const threshold = totalVotes / 2;
@@ -336,21 +344,27 @@ export function calculateRCVResult(
   let roundNumber = 0;
   let winner: BallotOption | undefined;
 
-  while (!winner && currentOptions.length > 1 && roundNumber < 10) {
+  const activeOptionIds = new Set(options.map(opt => opt.id));
+
+  while (!winner && activeOptionIds.size > 1 && roundNumber < 50) {
     roundNumber++;
 
-    // Count first-choice votes
     const voteDistribution: Record<string, number> = {};
-    currentOptions.forEach(opt => {
-      voteDistribution[opt.id] = 0;
-    });
+    for (const optId of activeOptionIds) {
+      voteDistribution[optId] = 0;
+    }
 
-    currentRankings.forEach(rankings => {
-      const firstChoice = rankings[0];
-      if (firstChoice && Object.prototype.hasOwnProperty.call(voteDistribution, firstChoice.optionId)) {
-        voteDistribution[firstChoice.optionId]++;
+    // Find the first valid choice for each voter
+    for (let i = 0; i < voterPreferences.length; i++) {
+      const prefs = voterPreferences[i];
+      for (let j = 0; j < prefs.length; j++) {
+        const optionId = prefs[j];
+        if (!eliminated.has(optionId) && activeOptionIds.has(optionId)) {
+          voteDistribution[optionId]++;
+          break; // Move to next voter
+        }
       }
-    });
+    }
 
     let maxVotes = -Infinity;
     let minVotes = Infinity;
@@ -369,10 +383,8 @@ export function calculateRCVResult(
       }
     }
 
-    // Check for winner
     if (maxVotes > threshold) {
-      winner = currentOptions.find(opt => opt.id === winnerId);
-
+      winner = options.find(opt => opt.id === winnerId);
       rounds.push({
         roundNumber,
         voteDistribution,
@@ -383,16 +395,8 @@ export function calculateRCVResult(
       break;
     }
 
-    // Eliminate loser
-    currentOptions = currentOptions.filter(opt => opt.id !== loserId);
-
-    // Optimization: Create a Set of current option IDs for O(1) lookup
-    const currentOptionIds = new Set(currentOptions.map(opt => opt.id));
-
-    // Redistribute votes
-    currentRankings = currentRankings.map(rankings =>
-      rankings.filter(r => currentOptionIds.has(r.optionId))
-    );
+    eliminated.add(loserId!);
+    activeOptionIds.delete(loserId!);
 
     rounds.push({
       roundNumber,
@@ -404,13 +408,9 @@ export function calculateRCVResult(
   }
 
   if (!winner) {
-    winner = currentOptions[0];
+    const remainingIds = Array.from(activeOptionIds);
+    winner = options.find(opt => opt.id === remainingIds[0]) || options[0];
   }
 
-  return {
-    rounds,
-    winner: winner!,
-    totalVotes,
-    completedAt: new Date(),
-  };
+  return { rounds, winner: winner!, totalVotes, completedAt: new Date() };
 }
