@@ -93,7 +93,15 @@ export function VotingPage({
     });
   };
 
-  const getRank = (optionId: string) => rankings.find(r => r.optionId === optionId)?.rank || 0;
+  const rankingsMap = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const r of rankings) {
+      map.set(r.optionId, r.rank);
+    }
+    return map;
+  }, [rankings]);
+
+  const getRank = (optionId: string) => rankingsMap.get(optionId) || 0;
 
   const handleRunSimulation = async () => {
     setIsSimulating(true);
