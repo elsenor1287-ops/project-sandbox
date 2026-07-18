@@ -1,7 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { useAppState, calculateRCVResult } from './useAppState';
 import { describe, it, expect } from 'vitest';
-import { BallotOption, BallotSubmission } from '../types';
+import { BallotOption, BallotSubmission, Proposal } from '../types';
 
 describe('useAppState', () => {
   describe('submitBallot', () => {
@@ -12,21 +12,40 @@ describe('useAppState', () => {
       expect(result.current.state.ballotSubmissions).toHaveLength(1);
       expect(result.current.state.ballotSubmissions[0].voterId).toBe('voter-1');
       expect(result.current.state.ballotSubmissions[0].writeIn).toBe('John Doe');
-      const writeInOption = result.current.state.ballotOptions.find(opt => opt.title === 'John Doe' && opt.isWriteIn);
+
+      const writeInOption = result.current.state.ballotOptions.find(
+        (opt) => opt.title === 'John Doe' && opt.isWriteIn
+      );
+
       expect(writeInOption).toBeDefined();
       expect(writeInOption?.writeInCount).toBe(1);
     });
 
     it('should add a ballot submission and increment the count of an existing write-in option', () => {
       const { result } = renderHook(() => useAppState());
-      const submission1 = { voterId: 'voter-1', rankings: [], writeIn: 'Jane Doe' };
-      const submission2 = { voterId: 'voter-2', rankings: [], writeIn: 'jane doe' };
+
+      const submission1 = {
+        voterId: 'voter-1',
+        rankings: [],
+        writeIn: 'Jane Doe',
+      };
+
+      const submission2 = {
+        voterId: 'voter-2',
+        rankings: [],
+        writeIn: 'jane doe',
+      };
+
       act(() => {
         result.current.submitBallot(submission1);
         result.current.submitBallot(submission2);
       });
       expect(result.current.state.ballotSubmissions).toHaveLength(2);
-      const writeInOptions = result.current.state.ballotOptions.filter(opt => opt.title.toLowerCase() === 'jane doe' && opt.isWriteIn);
+
+      const writeInOptions = result.current.state.ballotOptions.filter(
+        (opt) => opt.title.toLowerCase() === 'jane doe' && opt.isWriteIn
+      );
+
       expect(writeInOptions).toHaveLength(1);
       expect(writeInOptions[0].writeInCount).toBe(2);
     });
@@ -39,7 +58,33 @@ describe('useAppState', () => {
       expect(result.current.state.ballotSubmissions).toHaveLength(1);
       expect(result.current.state.ballotSubmissions[0].voterId).toBe('voter-1');
       expect(result.current.state.ballotSubmissions[0].writeIn).toBeUndefined();
+
       expect(result.current.state.ballotOptions).toHaveLength(initialOptionsCount);
+    });
+  });
+});
+
+import { calculateRCVResult } from './useAppState';
+import { BallotOption, BallotSubmission } from '../types';
+
+describe('calculateRCVResult', () => {
+  const options: BallotOption[] = [
+    { id: 'opt1', title: 'Option 1', description: '', budget: 0, category: 'other', voteCount: 0, isWriteIn: false },
+    { id: 'opt2', title: 'Option 2', description: '', budget: 0, category: 'other', voteCount: 0, isWriteIn: false },
+    { id: 'opt3', title: 'Option 3', description: '', budget: 0, category: 'other', voteCount: 0, isWriteIn: false },
+  ];
+
+  it('should find winner in round 1 if they have majority', () => {
+    const submissions: BallotSubmission[] = [
+      { voterId: 'v1', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v2', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v3', rankings: [{ optionId: 'opt2', rank: 1 }], submittedAt: new Date() },
+    ];
+    const result = calculateRCVResult(options, submissions);
+
+      expect(newProposal).toBeDefined();
+      expect(newProposal?.status).toBe('compiled');
+      expect(result.current.state.proposals).toHaveLength(1);
     });
   });
 
@@ -85,20 +130,6 @@ describe('calculateRCVResult', () => {
     { id: 'opt3', title: 'Option 3', description: '', budget: 0, category: 'other', voteCount: 0, isWriteIn: false },
   ];
 
-  it('calculates properly', () => {
-    const submissions: BallotSubmission[] = [
-      { voterId: 'v1', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
-      { voterId: 'v2', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
-      { voterId: 'v3', rankings: [{ optionId: 'opt2', rank: 1 }], submittedAt: new Date() },
-    ];
-    const result = calculateRCVResult(options, submissions);
-    expect(result.winner.id).toBe('opt1');
-    expect(result.rounds.length).toBe(1);
-    expect(result.totalVotes).toBe(3);
-    expect(result.rounds[0].winner).toBe('opt1');
-    expect(result.rounds[0].voteDistribution).toEqual({ opt1: 2, opt2: 1, opt3: 0 });
-  });
-
   it('should run multiple rounds and eliminate lowest vote getter if no majority', () => {
     const submissions: BallotSubmission[] = [
       { voterId: 'v1', rankings: [{ optionId: 'opt1', rank: 1 }, { optionId: 'opt2', rank: 2 }], submittedAt: new Date() },
@@ -107,6 +138,7 @@ describe('calculateRCVResult', () => {
       { voterId: 'v4', rankings: [{ optionId: 'opt2', rank: 1 }], submittedAt: new Date() },
       { voterId: 'v5', rankings: [{ optionId: 'opt3', rank: 1 }, { optionId: 'opt1', rank: 2 }], submittedAt: new Date() },
     ];
+
     const result = calculateRCVResult(options, submissions);
     expect(result.winner.id).toBe('opt1');
     expect(result.rounds.length).toBe(2);
@@ -128,13 +160,29 @@ describe('calculateRCVResult', () => {
       { voterId: 'v5', rankings: [{ optionId: 'opt3', rank: 1 }], submittedAt: new Date() },
       { voterId: 'v6', rankings: [{ optionId: 'opt4', rank: 1 }], submittedAt: new Date() },
     ];
+
     const result = calculateRCVResult(tieOptions, tieSubmissions);
     expect(result.rounds.length).toBeGreaterThan(1);
     expect(result.winner).toBeDefined();
   });
 
+  it('should handle exact tie terminal condition where loop finishes without a winner', () => {
+    const tieSubmissions: BallotSubmission[] = [
+      { voterId: 'v1', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v2', rankings: [{ optionId: 'opt2', rank: 1 }], submittedAt: new Date() },
+    ];
+
+    const currentOptions = [options[0], options[1]];
+
+    const result = calculateRCVResult(currentOptions, tieSubmissions);
+
+    expect(result.winner).toBeDefined();
+    expect(['opt1', 'opt2']).toContain(result.winner.id);
+  });
+
   it('should handle empty submissions', () => {
     const result = calculateRCVResult(options, []);
+
     expect(result.winner.id).toBe('opt3');
     expect(result.rounds.length).toBe(2);
     expect(result.totalVotes).toBe(0);
@@ -146,7 +194,44 @@ describe('calculateRCVResult', () => {
       { voterId: 'v2', rankings: [{ optionId: 'opt2', rank: 1 }], submittedAt: new Date() },
       { voterId: 'v3', rankings: [{ optionId: 'opt3', rank: 1 }], submittedAt: new Date() },
     ];
+
     const result = calculateRCVResult(options, submissions);
     expect(result.winner).toBeDefined();
+  });
+});
+
+describe('useAppState Law1', () => {
+  describe('checkLaw1Violations', () => {
+    it('returns empty array when there are no violations', () => {
+      const { result } = renderHook(() => useAppState());
+      const violations = result.current.checkLaw1Violations('We should build a new park in the community.');
+      expect(violations).toEqual([]);
+    });
+
+    it('detects a single violation', () => {
+      const { result } = renderHook(() => useAppState());
+      const violations = result.current.checkLaw1Violations('The city will ban speech on weekends.');
+      expect(violations).toEqual(['First Amendment Shield: "ban speech" detected']);
+    });
+
+    it('detects violations ignoring case (case insensitivity)', () => {
+      const { result } = renderHook(() => useAppState());
+      const violations = result.current.checkLaw1Violations('We should BAn SPeeCh immediately.');
+      expect(violations).toEqual(['First Amendment Shield: "ban speech" detected']);
+    });
+
+    it('detects multiple violations', () => {
+      const { result } = renderHook(() => useAppState());
+      const violations = result.current.checkLaw1Violations('We will ban speech and confiscate guns from citizens.');
+      expect(violations).toContain('First Amendment Shield: "ban speech" detected');
+      expect(violations).toContain('Second Amendment Shield: "confiscate guns" detected');
+      expect(violations.length).toBe(2);
+    });
+
+    it('detects partial/sub-string matches correctly', () => {
+      const { result } = renderHook(() => useAppState());
+      const violations = result.current.checkLaw1Violations('If they implement a censorship board...');
+      expect(violations).toEqual(['First Amendment Shield: "censor" detected']);
+    });
   });
 });
