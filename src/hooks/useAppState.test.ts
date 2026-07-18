@@ -81,20 +81,25 @@ describe('useAppState', () => {
       expect(result.current.state.ballotOptions).toHaveLength(initialOptionsCount);
     });
   });
+});
 
-  describe('submitProposal', () => {
-    it('submits a proposal successfully when there are no violations', () => {
-      const { result } = renderHook(() => useAppState());
-      const proposal = {
-        title: 'Test Proposal',
-        content: 'Test content',
-        category: 'infrastructure'
-      } as any;
+import { calculateRCVResult } from './useAppState';
+import { BallotOption, BallotSubmission } from '../types';
 
-      let newProposal: Proposal | undefined;
-      act(() => {
-        newProposal = result.current.submitProposal(proposal);
-      });
+describe('calculateRCVResult', () => {
+  const options: BallotOption[] = [
+    { id: 'opt1', title: 'Option 1', description: '', budget: 0, category: 'other', voteCount: 0, isWriteIn: false },
+    { id: 'opt2', title: 'Option 2', description: '', budget: 0, category: 'other', voteCount: 0, isWriteIn: false },
+    { id: 'opt3', title: 'Option 3', description: '', budget: 0, category: 'other', voteCount: 0, isWriteIn: false },
+  ];
+
+  it('should find winner in round 1 if they have majority', () => {
+    const submissions: BallotSubmission[] = [
+      { voterId: 'v1', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v2', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v3', rankings: [{ optionId: 'opt2', rank: 1 }], submittedAt: new Date() },
+    ];
+    const result = calculateRCVResult(options, submissions);
 
       expect(newProposal).toBeDefined();
       expect(newProposal?.status).toBe('compiled');
@@ -214,5 +219,41 @@ describe('calculateRCVResult', () => {
 
     const result = calculateRCVResult(options, submissions);
     expect(result.winner).toBeDefined();
+  });
+});
+
+describe('useAppState Law1', () => {
+  describe('checkLaw1Violations', () => {
+    it('returns empty array when there are no violations', () => {
+      const { result } = renderHook(() => useAppState());
+      const violations = result.current.checkLaw1Violations('We should build a new park in the community.');
+      expect(violations).toEqual([]);
+    });
+
+    it('detects a single violation', () => {
+      const { result } = renderHook(() => useAppState());
+      const violations = result.current.checkLaw1Violations('The city will ban speech on weekends.');
+      expect(violations).toEqual(['First Amendment Shield: "ban speech" detected']);
+    });
+
+    it('detects violations ignoring case (case insensitivity)', () => {
+      const { result } = renderHook(() => useAppState());
+      const violations = result.current.checkLaw1Violations('We should BAn SPeeCh immediately.');
+      expect(violations).toEqual(['First Amendment Shield: "ban speech" detected']);
+    });
+
+    it('detects multiple violations', () => {
+      const { result } = renderHook(() => useAppState());
+      const violations = result.current.checkLaw1Violations('We will ban speech and confiscate guns from citizens.');
+      expect(violations).toContain('First Amendment Shield: "ban speech" detected');
+      expect(violations).toContain('Second Amendment Shield: "confiscate guns" detected');
+      expect(violations.length).toBe(2);
+    });
+
+    it('detects partial/sub-string matches correctly', () => {
+      const { result } = renderHook(() => useAppState());
+      const violations = result.current.checkLaw1Violations('If they implement a censorship board...');
+      expect(violations).toEqual(['First Amendment Shield: "censor" detected']);
+    });
   });
 });
