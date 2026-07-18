@@ -81,7 +81,10 @@ describe('useAppState', () => {
 
       // No new option should be created
       expect(result.current.state.ballotOptions).toHaveLength(initialOptionsCount);
-import { describe, it, expect } from 'vitest';
+    });
+  });
+});
+
 import { calculateRCVResult } from './useAppState';
 import { BallotOption, BallotSubmission } from '../types';
 
@@ -92,9 +95,12 @@ describe('calculateRCVResult', () => {
     { id: 'opt3', title: 'Option 3', description: '', budget: 0, category: 'other', voteCount: 0, isWriteIn: false },
   ];
 
-  describe('submitProposal', () => {
-    it('submits a proposal successfully when there are no violations', () => {
-      const { result } = renderHook(() => useAppState());
+  it('submits a proposal successfully when there are no violations', () => {
+    const submissions: BallotSubmission[] = [
+      { voterId: 'v1', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v2', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v3', rankings: [{ optionId: 'opt2', rank: 1 }], submittedAt: new Date() },
+    ];
 
     const result = calculateRCVResult(options, submissions);
 
@@ -174,11 +180,10 @@ describe('calculateRCVResult', () => {
     // It should eliminate options until one remains or majority is reached.
     const result = calculateRCVResult(options, submissions);
     expect(result.winner).toBeDefined();
-import { renderHook } from '@testing-library/react';
-import { useAppState } from './useAppState';
-import { describe, it, expect } from 'vitest';
+  });
+});
 
-describe('useAppState', () => {
+describe('useAppState (Hooks)', () => {
   describe('checkLaw1Violations', () => {
     it('returns empty array when there are no violations', () => {
       const { result } = renderHook(() => useAppState());
