@@ -227,12 +227,9 @@ describe('useAppState', () => {
     });
   });
 
-  it('should declare a winner in the first round if an option has a majority', () => {
-    const submissions: BallotSubmission[] = [
-      { voterId: 'v1', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
-      { voterId: 'v2', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
-      { voterId: 'v3', rankings: [{ optionId: 'opt2', rank: 1 }], submittedAt: new Date() },
-    ];
+  describe('submitProposal', () => {
+    it('submits a proposal successfully when there are no violations', () => {
+      const { result } = renderHook(() => useAppState());
 
       let newProposal: any;
       act(() => {
