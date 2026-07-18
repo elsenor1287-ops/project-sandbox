@@ -7,17 +7,8 @@ describe('useAppState', () => {
   describe('submitBallot', () => {
     it('should add a ballot submission and create a new write-in option if it does not exist', () => {
       const { result } = renderHook(() => useAppState());
-
-      const newSubmission = {
-        voterId: 'voter-1',
-        rankings: [{ optionId: 'opt-1', rank: 1 }],
-        writeIn: 'John Doe',
-      };
-
-      act(() => {
-        result.current.submitBallot(newSubmission);
-      });
-
+      const newSubmission = { voterId: 'voter-1', rankings: [{ optionId: 'opt-1', rank: 1 }], writeIn: 'John Doe' };
+      act(() => { result.current.submitBallot(newSubmission); });
       expect(result.current.state.ballotSubmissions).toHaveLength(1);
       expect(result.current.state.ballotSubmissions[0].voterId).toBe('voter-1');
       expect(result.current.state.ballotSubmissions[0].writeIn).toBe('John Doe');
@@ -49,7 +40,6 @@ describe('useAppState', () => {
         result.current.submitBallot(submission1);
         result.current.submitBallot(submission2);
       });
-
       expect(result.current.state.ballotSubmissions).toHaveLength(2);
 
       const writeInOptions = result.current.state.ballotOptions.filter(
@@ -62,18 +52,9 @@ describe('useAppState', () => {
 
     it('should add a ballot submission without a write-in', () => {
       const { result } = renderHook(() => useAppState());
-
       const initialOptionsCount = result.current.state.ballotOptions.length;
-
-      const submission = {
-        voterId: 'voter-1',
-        rankings: [{ optionId: 'opt-1', rank: 1 }],
-      };
-
-      act(() => {
-        result.current.submitBallot(submission);
-      });
-
+      const submission = { voterId: 'voter-1', rankings: [{ optionId: 'opt-1', rank: 1 }] };
+      act(() => { result.current.submitBallot(submission); });
       expect(result.current.state.ballotSubmissions).toHaveLength(1);
       expect(result.current.state.ballotSubmissions[0].voterId).toBe('voter-1');
       expect(result.current.state.ballotSubmissions[0].writeIn).toBeUndefined();
@@ -159,7 +140,6 @@ describe('calculateRCVResult', () => {
     ];
 
     const result = calculateRCVResult(options, submissions);
-
     expect(result.winner.id).toBe('opt1');
     expect(result.rounds.length).toBe(2);
     expect(result.rounds[0].eliminatedOptionId).toBe('opt3');
@@ -172,7 +152,6 @@ describe('calculateRCVResult', () => {
       ...options,
       { id: 'opt4', title: 'Option 4', description: '', budget: 0, category: 'other', voteCount: 0, isWriteIn: false },
     ];
-
     const tieSubmissions: BallotSubmission[] = [
       { voterId: 'v1', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
       { voterId: 'v2', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
@@ -183,7 +162,6 @@ describe('calculateRCVResult', () => {
     ];
 
     const result = calculateRCVResult(tieOptions, tieSubmissions);
-
     expect(result.rounds.length).toBeGreaterThan(1);
     expect(result.winner).toBeDefined();
   });
