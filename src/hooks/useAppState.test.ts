@@ -1,6 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
-import { useAppState } from './useAppState';
+import { useAppState, calculateRCVResult } from './useAppState';
 import { describe, it, expect } from 'vitest';
+import { BallotOption, BallotSubmission } from '../types';
 
 describe('useAppState', () => {
   describe('submitBallot', () => {
@@ -81,9 +82,43 @@ describe('useAppState', () => {
 
       // No new option should be created
       expect(result.current.state.ballotOptions).toHaveLength(initialOptionsCount);
-import { describe, it, expect } from 'vitest';
-import { calculateRCVResult } from './useAppState';
-import { BallotOption, BallotSubmission } from '../types';
+    });
+  });
+
+  describe('checkLaw1Violations', () => {
+    it('returns empty array when there are no violations', () => {
+      const { result } = renderHook(() => useAppState());
+      const violations = result.current.checkLaw1Violations('We should build a new park in the community.');
+      expect(violations).toEqual([]);
+    });
+
+    it('detects a single violation', () => {
+      const { result } = renderHook(() => useAppState());
+      const violations = result.current.checkLaw1Violations('The city will ban speech on weekends.');
+      expect(violations).toEqual(['First Amendment Shield: "ban speech" detected']);
+    });
+
+    it('detects violations ignoring case (case insensitivity)', () => {
+      const { result } = renderHook(() => useAppState());
+      const violations = result.current.checkLaw1Violations('We should BAn SPeeCh immediately.');
+      expect(violations).toEqual(['First Amendment Shield: "ban speech" detected']);
+    });
+
+    it('detects multiple violations', () => {
+      const { result } = renderHook(() => useAppState());
+      const violations = result.current.checkLaw1Violations('We will ban speech and confiscate guns from citizens.');
+      expect(violations).toContain('First Amendment Shield: "ban speech" detected');
+      expect(violations).toContain('Second Amendment Shield: "confiscate guns" detected');
+      expect(violations.length).toBe(2);
+    });
+
+    it('detects partial/sub-string matches correctly', () => {
+      const { result } = renderHook(() => useAppState());
+      const violations = result.current.checkLaw1Violations('If they implement a censorship board...');
+      expect(violations).toEqual(['First Amendment Shield: "censor" detected']);
+    });
+  });
+});
 
 describe('calculateRCVResult', () => {
   const options: BallotOption[] = [
@@ -92,9 +127,12 @@ describe('calculateRCVResult', () => {
     { id: 'opt3', title: 'Option 3', description: '', budget: 0, category: 'other', voteCount: 0, isWriteIn: false },
   ];
 
-  describe('submitProposal', () => {
-    it('submits a proposal successfully when there are no violations', () => {
-      const { result } = renderHook(() => useAppState());
+  it('submits a proposal successfully when there are no violations', () => {
+    const submissions: BallotSubmission[] = [
+      { voterId: 'v1', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v2', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v3', rankings: [{ optionId: 'opt2', rank: 1 }], submittedAt: new Date() },
+    ];
 
     const result = calculateRCVResult(options, submissions);
 
@@ -174,42 +212,5 @@ describe('calculateRCVResult', () => {
     // It should eliminate options until one remains or majority is reached.
     const result = calculateRCVResult(options, submissions);
     expect(result.winner).toBeDefined();
-import { renderHook } from '@testing-library/react';
-import { useAppState } from './useAppState';
-import { describe, it, expect } from 'vitest';
-
-describe('useAppState', () => {
-  describe('checkLaw1Violations', () => {
-    it('returns empty array when there are no violations', () => {
-      const { result } = renderHook(() => useAppState());
-      const violations = result.current.checkLaw1Violations('We should build a new park in the community.');
-      expect(violations).toEqual([]);
-    });
-
-    it('detects a single violation', () => {
-      const { result } = renderHook(() => useAppState());
-      const violations = result.current.checkLaw1Violations('The city will ban speech on weekends.');
-      expect(violations).toEqual(['First Amendment Shield: "ban speech" detected']);
-    });
-
-    it('detects violations ignoring case (case insensitivity)', () => {
-      const { result } = renderHook(() => useAppState());
-      const violations = result.current.checkLaw1Violations('We should BAn SPeeCh immediately.');
-      expect(violations).toEqual(['First Amendment Shield: "ban speech" detected']);
-    });
-
-    it('detects multiple violations', () => {
-      const { result } = renderHook(() => useAppState());
-      const violations = result.current.checkLaw1Violations('We will ban speech and confiscate guns from citizens.');
-      expect(violations).toContain('First Amendment Shield: "ban speech" detected');
-      expect(violations).toContain('Second Amendment Shield: "confiscate guns" detected');
-      expect(violations.length).toBe(2);
-    });
-
-    it('detects partial/sub-string matches correctly', () => {
-      const { result } = renderHook(() => useAppState());
-      const violations = result.current.checkLaw1Violations('If they implement a censorship board...');
-      expect(violations).toEqual(['First Amendment Shield: "censor" detected']);
-    });
   });
 });
