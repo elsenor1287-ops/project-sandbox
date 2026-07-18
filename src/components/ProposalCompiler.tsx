@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import {
   Code2,
   Shield,
@@ -22,16 +22,11 @@ interface CompilerPageProps {
   onCheckViolations: (content: string) => string[];
 }
 
-
 export function CompilerPage({
   proposals,
   onSubmitProposal,
   onCheckViolations,
 }: CompilerPageProps) {
-  const law1Rules = useMemo(() => PROTOCOL_RULES.filter(r => r.law === 1), []);
-  const law2Rules = useMemo(() => PROTOCOL_RULES.filter(r => r.law === 2), []);
-  const law3Rules = useMemo(() => PROTOCOL_RULES.filter(r => r.law === 3), []);
-
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [selectedTier, setSelectedTier] = useState<'law1_shield' | 'law2_sandbox' | 'law3_dynamic'>(
@@ -44,6 +39,10 @@ export function CompilerPage({
     proposal?: Proposal;
   } | null>(null);
   const [activeRuleTab, setActiveRuleTab] = useState<'law1' | 'law2' | 'law3'>('law1');
+
+  const law1Rules = PROTOCOL_RULES.filter(r => r.law === 1);
+  const law2Rules = PROTOCOL_RULES.filter(r => r.law === 2);
+  const law3Rules = PROTOCOL_RULES.filter(r => r.law === 3);
 
   const handleCompile = async () => {
     setIsCompiling(true);
@@ -94,23 +93,19 @@ export function CompilerPage({
   };
 
   const highlightViolations = (text: string, violations: string[]) => {
-    if (!violations.length) return text;
-
-    const sortedKeywords = violations
-      .map(v => v.split('"')[1])
-      .filter(Boolean);
-
-    if (sortedKeywords.length === 0) return text;
-
-    const escapedSortedKeywords = sortedKeywords
-      .map(kw => kw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-      .sort((a, b) => b.length - a.length);
-
-    const sortedRegex = new RegExp(`(${escapedSortedKeywords.join('|')})`, 'gi');
-
-    return text.replace(sortedRegex, (_, keyword: string) => {
-      return `<span class="bg-danger-500/30 text-danger-300 px-1 rounded">${keyword}</span>`;
+    let highlighted = text;
+    violations.forEach(v => {
+      const keyword = v.split('"')[1];
+      if (keyword) {
+        const regex = new RegExp(`(${keyword})`, 'gi');
+        highlighted = highlighted.replace(regex, '==VIOLATION==$1==END==');
+      }
     });
+    return highlighted
+      .replace(/==VIOLATION==.*?==END==/g, match => {
+        const keyword = match.replace(/==VIOLATION==|==END==/g, '');
+        return `<span class="bg-danger-500/30 text-danger-300 px-1 rounded">${keyword}</span>`;
+      });
   };
 
   return (

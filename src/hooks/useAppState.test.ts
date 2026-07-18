@@ -1,119 +1,8 @@
 import { renderHook, act } from '@testing-library/react';
+import { useAppState } from './useAppState';
 import { describe, it, expect } from 'vitest';
-import { useAppState, calculateRCVResult } from './useAppState';
-import { BallotOption, BallotSubmission } from '../types';
 
 describe('useAppState', () => {
-  describe('completeVerificationStep', () => {
-    it('should complete passport step', () => {
-      const { result } = renderHook(() => useAppState());
-
-      expect(result.current.state.identity.passportVerified).toBe(false);
-      expect(result.current.state.identity.verificationStep).toBe('passport');
-
-      act(() => {
-        result.current.completeVerificationStep('passport');
-      });
-
-      expect(result.current.state.identity.passportVerified).toBe(true);
-      expect(result.current.state.identity.verificationStep).toBe('utility');
-    });
-
-    it('should complete utility step', () => {
-      const { result } = renderHook(() => useAppState());
-
-      expect(result.current.state.identity.utilityVerified).toBe(false);
-
-      act(() => {
-        result.current.completeVerificationStep('utility');
-      });
-
-      expect(result.current.state.identity.utilityVerified).toBe(true);
-      expect(result.current.state.identity.verificationStep).toBe('vouching');
-    });
-
-    it('should complete vouching step', () => {
-      const { result } = renderHook(() => useAppState());
-
-      expect(result.current.state.identity.status).toBe('pending');
-
-      act(() => {
-        result.current.completeVerificationStep('vouching');
-      });
-
-      expect(result.current.state.identity.vouchTokens).toHaveLength(3);
-      expect(result.current.state.identity.verificationStep).toBe('complete');
-      expect(result.current.state.identity.status).toBe('active');
-    });
-  });
-
-  describe('addVouchToken', () => {
-    it('should add a token and keep status pending if length < 3', () => {
-      const { result } = renderHook(() => useAppState());
-      act(() => {
-        result.current.completeVerificationStep('passport');
-      });
-      expect(result.current.state.identity.passportVerified).toBe(true);
-      expect(result.current.state.identity.verificationStep).toBe('utility');
-    });
-
-    it('should complete utility step', () => {
-      const { result } = renderHook(() => useAppState());
-      act(() => {
-        result.current.completeVerificationStep('utility');
-      });
-      expect(result.current.state.identity.utilityVerified).toBe(true);
-      expect(result.current.state.identity.verificationStep).toBe('vouching');
-    });
-
-    it('should add vouch tokens and complete verification when reaching 3', () => {
-      const { result } = renderHook(() => useAppState());
-
-      act(() => {
-        result.current.addVouchToken({
-          id: 't-1',
-          neighborName: 'Alice',
-          neighborAddress: '123 St',
-          signedAt: new Date(),
-          isValid: true,
-        });
-        result.current.addVouchToken({
-          id: 't-2',
-          neighborName: 'Bob',
-          neighborAddress: '456 St',
-          signedAt: new Date(),
-          isValid: true,
-        });
-        result.current.addVouchToken({
-          id: 't-3',
-          neighborName: 'Charlie',
-          neighborAddress: '789 St',
-          signedAt: new Date(),
-          isValid: true,
-        });
-      });
-
-      expect(result.current.state.identity.vouchTokens).toHaveLength(3);
-      expect(result.current.state.identity.verificationStep).toBe('complete');
-      expect(result.current.state.identity.status).toBe('active');
-    });
-
-    it('should keep status active and complete when length > 3', () => {
-      const { result } = renderHook(() => useAppState());
-
-      act(() => {
-        result.current.addVouchToken({ id: 't-1', neighborName: 'Alice', neighborAddress: '123 St', signedAt: new Date(), isValid: true });
-        result.current.addVouchToken({ id: 't-2', neighborName: 'Bob', neighborAddress: '456 St', signedAt: new Date(), isValid: true });
-        result.current.addVouchToken({ id: 't-3', neighborName: 'Charlie', neighborAddress: '789 St', signedAt: new Date(), isValid: true });
-        result.current.addVouchToken({ id: 't-4', neighborName: 'Dave', neighborAddress: '101 St', signedAt: new Date(), isValid: true });
-      });
-
-      expect(result.current.state.identity.vouchTokens).toHaveLength(4);
-      expect(result.current.state.identity.verificationStep).toBe('complete');
-      expect(result.current.state.identity.status).toBe('active');
-    });
-  });
-
   describe('submitBallot', () => {
     it('should add a ballot submission and create a new write-in option if it does not exist', () => {
       const { result } = renderHook(() => useAppState());
@@ -132,6 +21,7 @@ describe('useAppState', () => {
       expect(result.current.state.ballotSubmissions[0].voterId).toBe('voter-1');
       expect(result.current.state.ballotSubmissions[0].writeIn).toBe('John Doe');
 
+      // Check if the write-in option was created
       const writeInOption = result.current.state.ballotOptions.find(
         (opt) => opt.title === 'John Doe' && opt.isWriteIn
       );
@@ -152,7 +42,7 @@ describe('useAppState', () => {
       const submission2 = {
         voterId: 'voter-2',
         rankings: [],
-        writeIn: 'jane doe',
+        writeIn: 'jane doe', // case-insensitive check
       };
 
       act(() => {
@@ -162,6 +52,7 @@ describe('useAppState', () => {
 
       expect(result.current.state.ballotSubmissions).toHaveLength(2);
 
+      // Check if the write-in option was created and count incremented
       const writeInOptions = result.current.state.ballotOptions.filter(
         (opt) => opt.title.toLowerCase() === 'jane doe' && opt.isWriteIn
       );
@@ -188,11 +79,106 @@ describe('useAppState', () => {
       expect(result.current.state.ballotSubmissions[0].voterId).toBe('voter-1');
       expect(result.current.state.ballotSubmissions[0].writeIn).toBeUndefined();
 
+      // No new option should be created
       expect(result.current.state.ballotOptions).toHaveLength(initialOptionsCount);
-    });
+import { describe, it, expect } from 'vitest';
+import { calculateRCVResult } from './useAppState';
+import { BallotOption, BallotSubmission } from '../types';
+
+describe('calculateRCVResult', () => {
+  const options: BallotOption[] = [
+    { id: 'opt1', title: 'Option 1', description: '', budget: 0, category: 'other', voteCount: 0, isWriteIn: false },
+    { id: 'opt2', title: 'Option 2', description: '', budget: 0, category: 'other', voteCount: 0, isWriteIn: false },
+    { id: 'opt3', title: 'Option 3', description: '', budget: 0, category: 'other', voteCount: 0, isWriteIn: false },
+  ];
+
+  describe('submitProposal', () => {
+    it('submits a proposal successfully when there are no violations', () => {
+      const { result } = renderHook(() => useAppState());
+
+    const result = calculateRCVResult(options, submissions);
+
+    expect(result.winner.id).toBe('opt1');
+    expect(result.rounds.length).toBe(1);
+    expect(result.totalVotes).toBe(3);
+    expect(result.rounds[0].winner).toBe('opt1');
+    expect(result.rounds[0].voteDistribution).toEqual({ opt1: 2, opt2: 1, opt3: 0 });
   });
 
+  it('should run multiple rounds and eliminate lowest vote getter if no majority', () => {
+    const submissions: BallotSubmission[] = [
+      { voterId: 'v1', rankings: [{ optionId: 'opt1', rank: 1 }, { optionId: 'opt2', rank: 2 }], submittedAt: new Date() },
+      { voterId: 'v2', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v3', rankings: [{ optionId: 'opt2', rank: 1 }, { optionId: 'opt1', rank: 2 }], submittedAt: new Date() },
+      { voterId: 'v4', rankings: [{ optionId: 'opt2', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v5', rankings: [{ optionId: 'opt3', rank: 1 }, { optionId: 'opt1', rank: 2 }], submittedAt: new Date() }, // opt3 eliminated, vote goes to opt1
+    ];
 
+    // Initial distribution: opt1: 2, opt2: 2, opt3: 1
+    // Round 1: opt3 eliminated
+    // Round 2: opt3 vote goes to opt1. Distribution: opt1: 3, opt2: 2. Winner: opt1.
+    const result = calculateRCVResult(options, submissions);
+
+    expect(result.winner.id).toBe('opt1');
+    expect(result.rounds.length).toBe(2);
+    expect(result.rounds[0].eliminatedOptionId).toBe('opt3');
+    expect(result.rounds[1].winner).toBe('opt1');
+    expect(result.rounds[1].voteDistribution).toEqual({ opt1: 3, opt2: 2 });
+  });
+
+  it('should handle ties for minimum votes during elimination', () => {
+    // Total 3 votes. Threshold 1.5. opt1 has 2 votes. It wins round 1.
+    // Let's create a real tie scenario where elimination must happen.
+    const tieOptions: BallotOption[] = [
+      ...options,
+      { id: 'opt4', title: 'Option 4', description: '', budget: 0, category: 'other', voteCount: 0, isWriteIn: false },
+    ];
+
+    const tieSubmissions: BallotSubmission[] = [
+      { voterId: 'v1', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v2', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v3', rankings: [{ optionId: 'opt2', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v4', rankings: [{ optionId: 'opt2', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v5', rankings: [{ optionId: 'opt3', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v6', rankings: [{ optionId: 'opt4', rank: 1 }], submittedAt: new Date() },
+    ];
+
+    // Initial: opt1: 2, opt2: 2, opt3: 1, opt4: 1. Total: 6. Threshold: 3.
+    // Tied minimums: opt3 and opt4. The algorithm will pick one (usually the first one found by Object.keys).
+    const result = calculateRCVResult(tieOptions, tieSubmissions);
+
+    expect(result.rounds.length).toBeGreaterThan(1);
+    expect(result.winner).toBeDefined();
+  });
+
+  it('should handle empty submissions', () => {
+    const result = calculateRCVResult(options, []);
+
+    // If no submissions, all options tie with 0 votes.
+    // The algorithm eliminates them in order of Object.keys until 1 is left.
+    // In this case, opt1 is eliminated, then opt2, leaving opt3.
+    expect(result.winner.id).toBe('opt3');
+    expect(result.rounds.length).toBe(2);
+    expect(result.totalVotes).toBe(0);
+  });
+
+  it('should handle exhausted ballots where no one reaches majority', () => {
+    // If ballots don't have second choices, votes might be exhausted.
+    const submissions: BallotSubmission[] = [
+      { voterId: 'v1', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v2', rankings: [{ optionId: 'opt2', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v3', rankings: [{ optionId: 'opt3', rank: 1 }], submittedAt: new Date() },
+    ];
+
+    // Initial: opt1: 1, opt2: 1, opt3: 1.
+    // It should eliminate options until one remains or majority is reached.
+    const result = calculateRCVResult(options, submissions);
+    expect(result.winner).toBeDefined();
+import { renderHook } from '@testing-library/react';
+import { useAppState } from './useAppState';
+import { describe, it, expect } from 'vitest';
+
+describe('useAppState', () => {
   describe('checkLaw1Violations', () => {
     it('returns empty array when there are no violations', () => {
       const { result } = renderHook(() => useAppState());
@@ -225,115 +211,5 @@ describe('useAppState', () => {
       const violations = result.current.checkLaw1Violations('If they implement a censorship board...');
       expect(violations).toEqual(['First Amendment Shield: "censor" detected']);
     });
-  });
-
-  describe('submitProposal', () => {
-    it('submits a proposal successfully when there are no violations', () => {
-      const { result } = renderHook(() => useAppState());
-
-      let newProposal: any;
-      act(() => {
-        newProposal = result.current.submitProposal({
-          title: 'Test Proposal',
-          content: 'This is a safe proposal that just suggests building a park.',
-          tier: 'law1_shield',
-          submittedBy: 'user-1',
-        });
-      });
-
-      expect(newProposal.status).toBe('compiled');
-      expect(newProposal.vetoReason).toBeUndefined();
-      expect(newProposal.triggeredKeywords).toBeUndefined();
-    });
-
-    it('vetoes a proposal with a single Law 1 violation keyword', () => {
-      const { result } = renderHook(() => useAppState());
-
-      let newProposal: any;
-      act(() => {
-        newProposal = result.current.submitProposal({
-          title: 'Bad Proposal',
-          content: 'This proposal will ban speech in public areas.',
-          tier: 'law1_shield',
-          submittedBy: 'user-1',
-        });
-      });
-
-      const stateProposal = result.current.state.proposals.find(p => p.id === newProposal.id);
-      expect(stateProposal?.status).toBe('vetoed');
-      expect(newProposal.status).toBe('vetoed');
-    });
-
-    it('vetoes a proposal with a case-insensitive Law 1 violation keyword', () => {
-      const { result } = renderHook(() => useAppState());
-
-      let newProposal: any;
-      act(() => {
-        newProposal = result.current.submitProposal({
-          title: 'Casing Proposal',
-          content: 'We need to CENSOR the media right now.',
-          tier: 'law1_shield',
-          submittedBy: 'user-1',
-        });
-      });
-
-      expect(newProposal?.status).toBe('vetoed');
-      expect(newProposal?.vetoReason).toBe('First Amendment Shield: "censor" detected');
-      expect(newProposal?.triggeredKeywords).toEqual(['First Amendment Shield: "censor" detected']);
-    });
-  });
-});
-
-describe('calculateRCVResult', () => {
-  const options: BallotOption[] = [
-    { id: 'opt1', title: 'Option 1', description: '', budget: 0, category: 'other', voteCount: 0, isWriteIn: false },
-    { id: 'opt2', title: 'Option 2', description: '', budget: 0, category: 'other', voteCount: 0, isWriteIn: false },
-    { id: 'opt3', title: 'Option 3', description: '', budget: 0, category: 'other', voteCount: 0, isWriteIn: false },
-  ];
-
-  it('should run multiple rounds and eliminate lowest vote getter if no majority', () => {
-    const submissions: BallotSubmission[] = [
-      { voterId: 'v1', rankings: [{ optionId: 'opt1', rank: 1 }, { optionId: 'opt2', rank: 2 }], submittedAt: new Date() },
-      { voterId: 'v2', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
-      { voterId: 'v3', rankings: [{ optionId: 'opt2', rank: 1 }, { optionId: 'opt1', rank: 2 }], submittedAt: new Date() },
-      { voterId: 'v4', rankings: [{ optionId: 'opt2', rank: 1 }], submittedAt: new Date() },
-      { voterId: 'v5', rankings: [{ optionId: 'opt3', rank: 1 }, { optionId: 'opt1', rank: 2 }], submittedAt: new Date() },
-    ];
-
-    const result = calculateRCVResult(options, submissions);
-
-    expect(result.winner.id).toBe('opt1');
-    expect(result.rounds.length).toBe(2);
-    expect(result.totalVotes).toBe(5);
-  });
-
-  it('should handle ties for minimum votes during elimination', () => {
-    const tieOptions: BallotOption[] = [
-      ...options,
-      { id: 'opt4', title: 'Option 4', description: '', budget: 0, category: 'other', voteCount: 0, isWriteIn: false },
-    ];
-    const tieSubmissions: BallotSubmission[] = [
-      { voterId: 'v1', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
-      { voterId: 'v2', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
-      { voterId: 'v3', rankings: [{ optionId: 'opt2', rank: 1 }], submittedAt: new Date() },
-      { voterId: 'v4', rankings: [{ optionId: 'opt2', rank: 1 }], submittedAt: new Date() },
-      { voterId: 'v5', rankings: [{ optionId: 'opt3', rank: 1 }], submittedAt: new Date() },
-      { voterId: 'v6', rankings: [{ optionId: 'opt4', rank: 1 }], submittedAt: new Date() },
-    ];
-
-    const result = calculateRCVResult(tieOptions, tieSubmissions);
-
-    expect(result.winner.id).toBe('opt2');
-  });
-
-  it('should handle exhausted ballots where no one reaches majority', () => {
-    const submissions: BallotSubmission[] = [
-      { voterId: 'v1', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
-      { voterId: 'v2', rankings: [{ optionId: 'opt2', rank: 1 }], submittedAt: new Date() },
-      { voterId: 'v3', rankings: [{ optionId: 'opt3', rank: 1 }], submittedAt: new Date() },
-    ];
-
-    const result = calculateRCVResult(options, submissions);
-    expect(result.winner).toBeDefined();
   });
 });

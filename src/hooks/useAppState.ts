@@ -21,26 +21,6 @@ import {
 
 const LAW1_RULES = PROTOCOL_RULES.filter(rule => rule.law === 1);
 
-const escapeRegExp = (string: string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-
-const LAW1_KEYWORDS_FLAT = LAW1_RULES.flatMap(rule =>
-  rule.keywords.map(kw => ({
-    lowerKw: kw.toLowerCase(),
-    originalKw: kw,
-    ruleName: rule.name
-  }))
-);
-
-const COMPILED_LAW1_REGEX = new RegExp(
-  LAW1_KEYWORDS_FLAT.map(k => escapeRegExp(k.lowerKw)).join('|'),
-  'g'
-);
-
-const LAW1_KEYWORD_MAP = new Map(LAW1_KEYWORDS_FLAT.map(k => [
-  k.lowerKw,
-  `${k.ruleName}: "${k.originalKw}" detected`
-]));
-
 const initialState: AppState = {
   currentPage: '/dashboard',
   identity: INITIAL_IDENTITY,
@@ -144,16 +124,13 @@ export function useAppState() {
     const violations: string[] = [];
     const lowerContent = content.toLowerCase();
 
-    const matches = lowerContent.match(COMPILED_LAW1_REGEX);
-    if (matches) {
-      const uniqueMatches = new Set(matches);
-      for (const match of uniqueMatches) {
-        const ruleMsg = LAW1_KEYWORD_MAP.get(match);
-        if (ruleMsg) {
-          violations.push(ruleMsg);
+    LAW1_RULES.forEach(rule => {
+      rule.keywords.forEach(keyword => {
+        if (lowerContent.includes(keyword.toLowerCase())) {
+          violations.push(`${rule.name}: "${keyword}" detected`);
         }
-      }
-    }
+      });
+    });
 
     return violations;
   }, []);
@@ -163,7 +140,7 @@ export function useAppState() {
     const status = violations.length > 0 ? 'vetoed' : 'compiled';
 
     const newProposal: Proposal = {
-      id: crypto.randomUUID(),
+      id: `prop-${Date.now()}`,
       ...proposal,
       submittedAt: new Date(),
       status,
@@ -185,7 +162,6 @@ export function useAppState() {
     setState(prev => {
       const newSubmission: BallotSubmission = {
         ...submission,
-        rankings: [...submission.rankings].sort((a, b) => a.rank - b.rank),
         submittedAt: new Date(),
       };
 
@@ -202,7 +178,7 @@ export function useAppState() {
         } else {
           // Create new write-in option
           const newWriteInOption: BallotOption = {
-            id: crypto.randomUUID(),
+            id: `writein-${Date.now()}`,
             title: submission.writeIn,
             description: 'Write-in candidate submitted by voters',
             budget: 0,
@@ -279,7 +255,7 @@ export function useAppState() {
           existing.writeInCount = (existing.writeInCount || 0) + count;
         } else {
           newBallotOptions.push({
-            id: crypto.randomUUID(),
+            id: `writein-${Date.now()}-${crypto.randomUUID()}`,
             title: writeIn,
             description: 'Write-in candidate submitted by voters',
             budget: 0,
@@ -335,14 +311,8 @@ export function calculateRCVResult(
   submissions: BallotSubmission[]
 ): RCVResult {
   const rounds: RCVRound[] = [];
-
-  // Track eliminated option IDs
-  const eliminated = new Set<string>();
-
-  // Extract option IDs per voter (rankings are pre-sorted during submission)
-  const voterPreferences = submissions.map(sub => {
-    return sub.rankings.map(r => r.optionId);
-  });
+  let currentOptions = [...options];
+  let currentRankings = submissions.map(sub => [...sub.rankings].sort((a, b) => a.rank - b.rank));
 
   const totalVotes = submissions.length;
   const threshold = totalVotes / 2;
@@ -350,33 +320,21 @@ export function calculateRCVResult(
   let roundNumber = 0;
   let winner: BallotOption | undefined;
 
-  const activeOptionIds = new Set(options.map(opt => opt.id));
-
-    // A voter's active preference index
-  const activePrefs = new Int32Array(submissions.length);
-
-
-  // Initialize vote counts for the first round
-  const voteDistribution: Record<string, number> = {};
-  for (const optId of activeOptionIds) {
-    voteDistribution[optId] = 0;
-  }
-
-  for (let i = 0; i < voterPreferences.length; i++) {
-     const prefs = voterPreferences[i];
-     // Find their first valid preference (might not be index 0 if they voted for an invalid candidate)
-     let j = 0;
-     while (j < prefs.length && !activeOptionIds.has(prefs[j])) {
-         j++;
-     }
-     activePrefs[i] = j;
-     if(j < prefs.length) {
-         voteDistribution[prefs[j]]++;
-     }
-  }
-
-  while (!winner && activeOptionIds.size > 1 && roundNumber < 50) {
+  while (!winner && currentOptions.length > 1 && roundNumber < 10) {
     roundNumber++;
+
+    // Count first-choice votes
+    const voteDistribution: Record<string, number> = {};
+    currentOptions.forEach(opt => {
+      voteDistribution[opt.id] = 0;
+    });
+
+    currentRankings.forEach(rankings => {
+      const firstChoice = rankings[0];
+      if (firstChoice && Object.prototype.hasOwnProperty.call(voteDistribution, firstChoice.optionId)) {
+        voteDistribution[firstChoice.optionId]++;
+      }
+    });
 
     let maxVotes = -Infinity;
     let minVotes = Infinity;
@@ -395,11 +353,13 @@ export function calculateRCVResult(
       }
     }
 
+    // Check for winner
     if (maxVotes > threshold) {
-      winner = options.find(opt => opt.id === winnerId);
+      winner = currentOptions.find(opt => opt.id === winnerId);
+
       rounds.push({
         roundNumber,
-        voteDistribution: { ...voteDistribution },
+        voteDistribution,
         threshold,
         winner: winnerId,
         totalVotes,
@@ -407,44 +367,34 @@ export function calculateRCVResult(
       break;
     }
 
-    // Record round BEFORE we mutate voteDistribution
+    // Eliminate loser
+    currentOptions = currentOptions.filter(opt => opt.id !== loserId);
+
+    // Optimization: Create a Set of current option IDs for O(1) lookup
+    const currentOptionIds = new Set(currentOptions.map(opt => opt.id));
+
+    // Redistribute votes
+    currentRankings = currentRankings.map(rankings =>
+      rankings.filter(r => currentOptionIds.has(r.optionId))
+    );
+
     rounds.push({
       roundNumber,
       eliminatedOptionId: loserId,
-      voteDistribution: { ...voteDistribution },
+      voteDistribution,
       threshold,
       totalVotes,
     });
-
-    eliminated.add(loserId!);
-    activeOptionIds.delete(loserId!);
-    delete voteDistribution[loserId!];
-
-    // Reassign votes for users whose candidate was eliminated
-    for (let i = 0; i < voterPreferences.length; i++) {
-      const prefs = voterPreferences[i];
-      let currentPrefIndex = activePrefs[i];
-
-      // If their current active choice is the one that just lost, find their next valid choice
-      if (currentPrefIndex < prefs.length && prefs[currentPrefIndex] === loserId) {
-          currentPrefIndex++;
-          // Skip any option that is not currently active
-          while(currentPrefIndex < prefs.length && !activeOptionIds.has(prefs[currentPrefIndex])) {
-              currentPrefIndex++;
-          }
-          activePrefs[i] = currentPrefIndex;
-
-          if(currentPrefIndex < prefs.length) {
-              voteDistribution[prefs[currentPrefIndex]]++;
-          }
-      }
-    }
   }
 
   if (!winner) {
-    const remainingIds = Array.from(activeOptionIds);
-    winner = options.find(opt => opt.id === remainingIds[0]) || options[0];
+    winner = currentOptions[0];
   }
 
-  return { rounds, winner: winner!, totalVotes, completedAt: new Date() };
+  return {
+    rounds,
+    winner: winner!,
+    totalVotes,
+    completedAt: new Date(),
+  };
 }
