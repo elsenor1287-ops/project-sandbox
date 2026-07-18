@@ -93,19 +93,31 @@ export function CompilerPage({
   };
 
   const highlightViolations = (text: string, violations: string[]) => {
-    let highlighted = text;
-    violations.forEach(v => {
-      const keyword = v.split('"')[1];
-      if (keyword) {
-        const regex = new RegExp(`(${keyword})`, 'gi');
-        highlighted = highlighted.replace(regex, '==VIOLATION==$1==END==');
-      }
-    });
-    return highlighted
-      .replace(/==VIOLATION==.*?==END==/g, match => {
-        const keyword = match.replace(/==VIOLATION==|==END==/g, '');
-        return `<span class="bg-danger-500/30 text-danger-300 px-1 rounded">${keyword}</span>`;
-      });
+    const keywords = violations
+      .map(v => v.split('"')[1])
+      .filter(Boolean) as string[];
+
+    if (keywords.length === 0) return <>{text}</>;
+
+    const regex = new RegExp(`(${keywords.join('|')})`, 'gi');
+    const parts = text.split(regex);
+
+    return (
+      <>
+        {parts.map((part, i) => {
+          const isViolation = keywords.some(
+            k => k.toLowerCase() === part.toLowerCase()
+          );
+          return isViolation ? (
+            <span key={i} className="bg-danger-500/30 text-danger-300 px-1 rounded">
+              {part}
+            </span>
+          ) : (
+            <span key={i}>{part}</span>
+          );
+        })}
+      </>
+    );
   };
 
   return (
@@ -372,12 +384,9 @@ export function CompilerPage({
 
                 <div>
                   <span className="text-xs text-primary-500">Violating Content</span>
-                  <div
-                    className="mt-2 p-3 bg-danger-500/10 rounded-lg font-mono text-sm text-primary-300"
-                    dangerouslySetInnerHTML={{
-                      __html: highlightViolations(content, compileResult.violations),
-                    }}
-                  />
+                  <div className="mt-2 p-3 bg-danger-500/10 rounded-lg font-mono text-sm text-primary-300">
+                    {highlightViolations(content, compileResult.violations)}
+                  </div>
                 </div>
               </div>
             </div>
