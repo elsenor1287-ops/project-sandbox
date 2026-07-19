@@ -17,10 +17,14 @@ export function BallotStatus({
 }: BallotStatusProps) {
   const voteCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    for (const sub of ballotSubmissions) {
-      const firstChoice = sub.rankings.find(r => r.rank === 1);
-      if (firstChoice) {
-        counts[firstChoice.optionId] = (counts[firstChoice.optionId] || 0) + 1;
+    for (let i = 0; i < ballotSubmissions.length; i++) {
+      const rankings = ballotSubmissions[i].rankings;
+      for (let j = 0; j < rankings.length; j++) {
+        if (rankings[j].rank === 1) {
+          const optId = rankings[j].optionId;
+          counts[optId] = (counts[optId] || 0) + 1;
+          break;
+        }
       }
     }
     return counts;
