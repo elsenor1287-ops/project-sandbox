@@ -385,6 +385,7 @@ export function CompilerPage({
                 <div>
                   <span className="text-xs text-primary-500">Violating Content</span>
                   <div className="mt-2 p-3 bg-danger-500/10 rounded-lg font-mono text-sm text-primary-300">
+                    {/* XSS vulnerability mitigated by rendering React elements */}
                     {highlightViolations(content, compileResult.violations)}
                   </div>
                 </div>
