@@ -93,6 +93,7 @@ export function VotingPage({
     });
   };
 
+  // Performance optimization: Memoized map for O(1) rank lookups
   const rankingsMap = useMemo(() => {
     const map = new Map<string, number>();
     for (const r of rankings) {
