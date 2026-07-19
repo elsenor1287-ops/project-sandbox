@@ -122,7 +122,6 @@ export function VotingPage({
     // Animate through rounds
     const result = calculateRCVResult(ballotOptions, submissions);
     for (let i = 0; i < result.rounds.length; i++) {
-      await new Promise(r => setTimeout(r, 1000));
       setSimulationRound(i + 1);
     }
     setIsSimulating(false);
