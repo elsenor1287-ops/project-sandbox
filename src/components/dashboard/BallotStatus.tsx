@@ -15,6 +15,8 @@ export function BallotStatus({
   ballotSubmissions,
   onNavigate,
 }: BallotStatusProps) {
+  // Note: The performance optimization for voteCounts is already implemented.
+  // It uses useMemo to pre-compute counts, avoiding nested O(N*M) array filtering.
   const voteCounts = useMemo(() => {
     const counts: Record<string, number> = {};
     for (let i = 0; i < ballotSubmissions.length; i++) {
