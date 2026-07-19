@@ -321,6 +321,7 @@ export function calculateRCVResult(
   const rounds: RCVRound[] = [];
   let currentOptions = [...options];
   let currentRankings = submissions.map(sub => [...sub.rankings].sort((a, b) => a.rank - b.rank));
+  let activeOptionIds = new Set(options.map(opt => opt.id));
 
   const totalVotes = submissions.length;
   const threshold = totalVotes / 2;
@@ -379,11 +380,11 @@ export function calculateRCVResult(
     currentOptions = currentOptions.filter(opt => opt.id !== loserId);
 
     // Optimization: Create a Set of current option IDs for O(1) lookup
-    const currentOptionIds = new Set(currentOptions.map(opt => opt.id));
+    activeOptionIds = new Set(currentOptions.map(opt => opt.id));
 
     // Redistribute votes
     currentRankings = currentRankings.map(rankings =>
-      rankings.filter(r => currentOptionIds.has(r.optionId))
+      rankings.filter(r => activeOptionIds.has(r.optionId))
     );
 
     rounds.push({
@@ -396,7 +397,8 @@ export function calculateRCVResult(
   }
 
   if (!winner) {
-    winner = currentOptions[0];
+    const remainingIds = Array.from(activeOptionIds);
+    winner = options.find(opt => opt.id === remainingIds[0]) || options[0];
   }
 
   return {

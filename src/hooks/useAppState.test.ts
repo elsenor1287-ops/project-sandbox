@@ -231,7 +231,21 @@ describe('calculateRCVResult', () => {
     const result = calculateRCVResult(currentOptions, tieSubmissions);
 
     expect(result.winner).toBeDefined();
-    expect(['opt1', 'opt2']).toContain(result.winner.id);
+    expect(result.winner.id).toBe('opt2');
+  });
+
+  it('should handle exact tie terminal condition with flipped submissions', () => {
+    const tieSubmissions: BallotSubmission[] = [
+      { voterId: 'v1', rankings: [{ optionId: 'opt2', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v2', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
+    ];
+
+    const currentOptions = [options[0], options[1]];
+
+    const result = calculateRCVResult(currentOptions, tieSubmissions);
+
+    expect(result.winner).toBeDefined();
+    expect(result.winner.id).toBe('opt2');
   });
 
   it('should handle empty submissions', () => {
