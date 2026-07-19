@@ -246,15 +246,21 @@ export function useAppState() {
         }
       });
 
+      const existingWriteIns = new Map<string, BallotOption>();
+      for (const opt of newBallotOptions) {
+        if (opt.isWriteIn) {
+          existingWriteIns.set(opt.title.toLowerCase(), opt);
+        }
+      }
+
       Object.entries(writeInCounts).forEach(([writeIn, count]) => {
-        const existing = newBallotOptions.find(
-          opt => opt.isWriteIn && opt.title.toLowerCase() === writeIn.toLowerCase()
-        );
+        const normalized = writeIn.toLowerCase();
+        const existing = existingWriteIns.get(normalized);
 
         if (existing) {
           existing.writeInCount = (existing.writeInCount || 0) + count;
         } else {
-          newBallotOptions.push({
+          const newWriteInOption: BallotOption = {
             id: `writein-${Date.now()}-${crypto.randomUUID()}`,
             title: writeIn,
             description: 'Write-in candidate submitted by voters',
@@ -263,7 +269,9 @@ export function useAppState() {
             voteCount: 0,
             isWriteIn: true,
             writeInCount: count,
-          });
+          };
+          newBallotOptions.push(newWriteInOption);
+          existingWriteIns.set(normalized, newWriteInOption);
         }
       });
 
