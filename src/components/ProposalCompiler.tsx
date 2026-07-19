@@ -6,6 +6,7 @@ import { ProposalEditor } from './compiler/ProposalEditor';
 import { CompilerOutput } from './compiler/CompilerOutput';
 import { ProposalHistory } from './compiler/ProposalHistory';
 import { useProposalCompiler } from './compiler/useProposalCompiler';
+import { CompilerHeader } from './compiler/CompilerHeader';
 
 interface CompilerPageProps {
   proposals: Proposal[];
@@ -34,13 +35,7 @@ export function CompilerPage({
 
   return (
     <div className="p-8 space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-3xl font-bold text-gradient">Proposal Compiler Workspace</h1>
-        <p className="text-primary-400 mt-1">
-          Automated Asimov Protocol compliance verification for civic proposals
-        </p>
-      </div>
+      <CompilerHeader />
 
       <AsimovLawsOverview />
       <ProtocolRulesReference />
