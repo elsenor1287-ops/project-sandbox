@@ -1,7 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { useAppState, calculateRCVResult } from './useAppState';
 import { describe, it, expect } from 'vitest';
-import { BallotOption, BallotSubmission, Proposal } from '../types';
+import { BallotOption, BallotSubmission } from '../types';
 
 describe('useAppState', () => {
   describe('submitBallot', () => {
@@ -64,8 +64,7 @@ describe('useAppState', () => {
   });
 });
 
-import { calculateRCVResult } from './useAppState';
-import { BallotOption, BallotSubmission } from '../types';
+
 
 describe('calculateRCVResult', () => {
   const options: BallotOption[] = [
@@ -81,12 +80,10 @@ describe('calculateRCVResult', () => {
       { voterId: 'v3', rankings: [{ optionId: 'opt2', rank: 1 }], submittedAt: new Date() },
     ];
     const result = calculateRCVResult(options, submissions);
-
-      expect(newProposal).toBeDefined();
-      expect(newProposal?.status).toBe('compiled');
-      expect(result.current.state.proposals).toHaveLength(1);
-    });
+    expect(result.winner.id).toBe('opt1');
+    expect(result.rounds.length).toBe(1);
   });
+});
 
   describe('checkLaw1Violations', () => {
     it('returns empty array when there are no violations', () => {
