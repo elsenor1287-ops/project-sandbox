@@ -64,6 +64,8 @@ describe('useAppState', () => {
   });
 });
 
+
+
 describe('calculateRCVResult', () => {
   const options: BallotOption[] = [
     { id: 'opt1', title: 'Option 1', description: '', budget: 0, category: 'other', voteCount: 0, isWriteIn: false },
@@ -80,13 +82,6 @@ describe('calculateRCVResult', () => {
     const result = calculateRCVResult(options, submissions);
     expect(result.winner.id).toBe('opt1');
     expect(result.rounds.length).toBe(1);
-
-    const newProposal = { status: 'compiled' };
-    const mockState = { current: { state: { proposals: [newProposal] } } };
-
-    expect(newProposal).toBeDefined();
-    expect(newProposal?.status).toBe('compiled');
-    expect(mockState.current.state.proposals).toHaveLength(1);
   });
 });
 
