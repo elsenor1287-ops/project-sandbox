@@ -1,7 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { useAppState, calculateRCVResult } from './useAppState';
 import { describe, it, expect } from 'vitest';
-import { BallotOption, BallotSubmission } from '../types';
+import { BallotOption, BallotSubmission, Proposal } from '../types';
 
 describe('useAppState', () => {
   describe('submitBallot', () => {
@@ -60,6 +60,62 @@ describe('useAppState', () => {
       expect(result.current.state.ballotSubmissions[0].writeIn).toBeUndefined();
 
       expect(result.current.state.ballotOptions).toHaveLength(initialOptionsCount);
+    });
+  });
+
+  describe('submitProposal', () => {
+    it('compiles a valid proposal without any Law 1 violation keywords', () => {
+      const { result } = renderHook(() => useAppState());
+
+      let newProposal: Proposal | undefined;
+      act(() => {
+        newProposal = result.current.submitProposal({
+          title: 'Test Proposal',
+          content: 'This is a safe proposal that just suggests building a park.',
+          tier: 'law1_shield',
+          submittedBy: 'user-1',
+        });
+      });
+
+      expect(newProposal?.status).toBe('compiled');
+      expect(newProposal?.vetoReason).toBeUndefined();
+      expect(newProposal?.triggeredKeywords).toBeUndefined();
+    });
+
+    it('vetoes a proposal with a single Law 1 violation keyword', () => {
+      const { result } = renderHook(() => useAppState());
+
+      let newProposal: Proposal | undefined;
+      act(() => {
+        newProposal = result.current.submitProposal({
+          title: 'Bad Proposal',
+          content: 'This proposal will ban speech in public areas.',
+          tier: 'law1_shield',
+          submittedBy: 'user-1',
+        });
+      });
+
+      const stateProposal = result.current.state.proposals.find(p => p.id === newProposal?.id);
+      expect(stateProposal?.status).toBe('vetoed');
+      expect(newProposal?.status).toBe('vetoed');
+    });
+
+    it('vetoes a proposal with a case-insensitive Law 1 violation keyword', () => {
+      const { result } = renderHook(() => useAppState());
+
+      let newProposal: Proposal | undefined;
+      act(() => {
+        newProposal = result.current.submitProposal({
+          title: 'Casing Proposal',
+          content: 'We need to CENSOR the media right now.',
+          tier: 'law1_shield',
+          submittedBy: 'user-1',
+        });
+      });
+
+      expect(newProposal?.status).toBe('vetoed');
+      expect(newProposal?.vetoReason).toBe('First Amendment Shield: "censor" detected');
+      expect(newProposal?.triggeredKeywords).toEqual(['First Amendment Shield: "censor" detected']);
     });
   });
 });
