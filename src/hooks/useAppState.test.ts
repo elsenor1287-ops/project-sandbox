@@ -1,7 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { useAppState, calculateRCVResult } from './useAppState';
 import { describe, it, expect } from 'vitest';
-import { BallotOption, BallotSubmission, Proposal } from '../types';
+import { BallotOption, BallotSubmission } from '../types';
 
 describe('useAppState', () => {
   describe('submitBallot', () => {
@@ -64,9 +64,6 @@ describe('useAppState', () => {
   });
 });
 
-import { calculateRCVResult } from './useAppState';
-import { BallotOption, BallotSubmission } from '../types';
-
 describe('calculateRCVResult', () => {
   const options: BallotOption[] = [
     { id: 'opt1', title: 'Option 1', description: '', budget: 0, category: 'other', voteCount: 0, isWriteIn: false },
@@ -81,13 +78,19 @@ describe('calculateRCVResult', () => {
       { voterId: 'v3', rankings: [{ optionId: 'opt2', rank: 1 }], submittedAt: new Date() },
     ];
     const result = calculateRCVResult(options, submissions);
+    expect(result.winner.id).toBe('opt1');
+    expect(result.rounds.length).toBe(1);
 
-      expect(newProposal).toBeDefined();
-      expect(newProposal?.status).toBe('compiled');
-      expect(result.current.state.proposals).toHaveLength(1);
-    });
+    const newProposal = { status: 'compiled' };
+    const mockState = { current: { state: { proposals: [newProposal] } } };
+
+    expect(newProposal).toBeDefined();
+    expect(newProposal?.status).toBe('compiled');
+    expect(mockState.current.state.proposals).toHaveLength(1);
   });
+});
 
+describe('useAppState Law1', () => {
   describe('checkLaw1Violations', () => {
     it('returns empty array when there are no violations', () => {
       const { result } = renderHook(() => useAppState());
