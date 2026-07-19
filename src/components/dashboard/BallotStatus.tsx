@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { BarChart3, ArrowRight, CheckCircle2, Vote } from 'lucide-react';
 import type { AppState } from '../../types';
 
@@ -14,6 +15,21 @@ export function BallotStatus({
   ballotSubmissions,
   onNavigate,
 }: BallotStatusProps) {
+  const voteCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    for (let i = 0; i < ballotSubmissions.length; i++) {
+      const rankings = ballotSubmissions[i].rankings;
+      for (let j = 0; j < rankings.length; j++) {
+        if (rankings[j].rank === 1) {
+          const optId = rankings[j].optionId;
+          counts[optId] = (counts[optId] || 0) + 1;
+          break;
+        }
+      }
+    }
+    return counts;
+  }, [ballotSubmissions]);
+
   return (
     <div className="card p-6 col-span-2">
       <div className="flex items-center justify-between mb-4">
@@ -56,9 +72,7 @@ export function BallotStatus({
 
       <div className="grid grid-cols-2 gap-4">
         {ballotOptions.slice(0, 4).map(option => {
-          const voteCount = ballotSubmissions.filter(sub =>
-            sub.rankings.some(r => r.optionId === option.id && r.rank === 1)
-          ).length;
+          const voteCount = voteCounts[option.id] || 0;
           const percentage =
             ballotSubmissions.length > 0
               ? (voteCount / ballotSubmissions.length) * 100
