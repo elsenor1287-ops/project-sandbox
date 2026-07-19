@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import type { Proposal } from '../types';
 
 import { AsimovLawsOverview } from './compiler/AsimovLawsOverview';
@@ -6,6 +5,7 @@ import { ProtocolRulesReference } from './compiler/ProtocolRulesReference';
 import { ProposalEditor } from './compiler/ProposalEditor';
 import { CompilerOutput } from './compiler/CompilerOutput';
 import { ProposalHistory } from './compiler/ProposalHistory';
+import { useProposalCompiler } from './compiler/useProposalCompiler';
 
 interface CompilerPageProps {
   proposals: Proposal[];
@@ -20,52 +20,17 @@ export function CompilerPage({
   onSubmitProposal,
   onCheckViolations,
 }: CompilerPageProps) {
-  const [title, setTitle] = useState('');
-  const [content, setContent] = useState('');
-  const [selectedTier, setSelectedTier] = useState<'law1_shield' | 'law2_sandbox' | 'law3_dynamic'>(
-    'law2_sandbox'
-  );
-  const [isCompiling, setIsCompiling] = useState(false);
-  const [compileResult, setCompileResult] = useState<{
-    success: boolean;
-    violations: string[];
-    proposal?: Proposal;
-  } | null>(null);
-
-  const handleCompile = async () => {
-    setIsCompiling(true);
-    setCompileResult(null);
-
-    // Simulate compilation delay
-    await new Promise(r => setTimeout(r, 1500));
-
-    const violations = onCheckViolations(content);
-
-    if (violations.length > 0) {
-      setCompileResult({
-        success: false,
-        violations,
-      });
-    } else {
-      const proposal = onSubmitProposal({
-        title,
-        content,
-        tier: selectedTier,
-        submittedBy: 'CITIZEN-2024-01337',
-      });
-
-      setCompileResult({
-        success: true,
-        violations: [],
-        proposal,
-      });
-
-      setTitle('');
-      setContent('');
-    }
-
-    setIsCompiling(false);
-  };
+  const {
+    title,
+    setTitle,
+    content,
+    setContent,
+    selectedTier,
+    setSelectedTier,
+    isCompiling,
+    compileResult,
+    handleCompile,
+  } = useProposalCompiler({ onSubmitProposal, onCheckViolations });
 
   return (
     <div className="p-8 space-y-8">
