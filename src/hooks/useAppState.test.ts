@@ -85,6 +85,7 @@ describe('calculateRCVResult', () => {
   });
 });
 
+describe('useAppState Law1', () => {
   describe('checkLaw1Violations', () => {
     it('returns empty array when there are no violations', () => {
       const { result } = renderHook(() => useAppState());
