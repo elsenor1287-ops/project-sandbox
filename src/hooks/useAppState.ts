@@ -19,7 +19,10 @@ import {
   PROTOCOL_RULES,
 } from '../data/mockData';
 
-const LAW1_RULES = PROTOCOL_RULES.filter(rule => rule.law === 1);
+const LAW1_RULES = PROTOCOL_RULES.filter(rule => rule.law === 1).map(rule => ({
+  ...rule,
+  lowerKeywords: rule.keywords.map(keyword => keyword.toLowerCase()),
+}));
 
 const initialState: AppState = {
   currentPage: '/dashboard',
@@ -125,9 +128,9 @@ export function useAppState() {
     const lowerContent = content.toLowerCase();
 
     LAW1_RULES.forEach(rule => {
-      rule.keywords.forEach(keyword => {
-        if (lowerContent.includes(keyword.toLowerCase())) {
-          violations.push(`${rule.name}: "${keyword}" detected`);
+      rule.lowerKeywords.forEach((lowerKeyword, index) => {
+        if (lowerContent.includes(lowerKeyword)) {
+          violations.push(`${rule.name}: "${rule.keywords[index]}" detected`);
         }
       });
     });
