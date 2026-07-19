@@ -10,7 +10,20 @@ describe('Layout Components', () => {
       expect(screen.getByText('CITIZEN-2024-01337')).toBeInTheDocument();
       expect(screen.getByText('Monthly Cycle Active')).toBeInTheDocument();
       expect(screen.getByText('Feb 1 - Feb 28, 2024')).toBeInTheDocument();
-      expect(screen.getByText('C')).toBeInTheDocument();
+    });
+
+    it('renders user avatar correctly', () => {
+      render(<Header />);
+      const avatar = screen.getByText('C');
+      expect(avatar).toBeInTheDocument();
+      expect(avatar).toHaveClass('w-10 h-10 rounded-full bg-gradient-to-br from-accent-600 to-accent-400 flex items-center justify-center text-white font-medium');
+    });
+
+    it('renders with correct layout classes', () => {
+      const { container } = render(<Header />);
+      const header = container.querySelector('header');
+      expect(header).toBeInTheDocument();
+      expect(header).toHaveClass('h-16 bg-primary-900/50 backdrop-blur-xl border-b border-primary-700/50 flex items-center justify-between px-6');
     });
   });
 
@@ -51,9 +64,17 @@ describe('Layout Components', () => {
     });
 
     it('renders different identity status colors', () => {
-      const { container } = render(<Sidebar currentPage="/dashboard" onNavigate={vi.fn()} identityStatus="frozen" />);
+      const { container, rerender } = render(<Sidebar currentPage="/dashboard" onNavigate={vi.fn()} identityStatus="frozen" />);
       expect(screen.getByText('frozen')).toBeInTheDocument();
       expect(container.querySelector('.bg-danger-400')).toBeInTheDocument();
+
+      rerender(<Sidebar currentPage="/dashboard" onNavigate={vi.fn()} identityStatus="deactivated" />);
+      expect(screen.getByText('deactivated')).toBeInTheDocument();
+      expect(container.querySelector('.bg-danger-600')).toBeInTheDocument();
+
+      rerender(<Sidebar currentPage="/dashboard" onNavigate={vi.fn()} identityStatus="unknown" />);
+      expect(screen.getByText('unknown')).toBeInTheDocument();
+      expect(container.querySelector('.bg-warning-400')).toBeInTheDocument();
     });
   });
 });
