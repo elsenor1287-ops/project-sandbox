@@ -2,8 +2,7 @@ import type { Proposal } from '../types';
 
 import { AsimovLawsOverview } from './compiler/AsimovLawsOverview';
 import { ProtocolRulesReference } from './compiler/ProtocolRulesReference';
-import { ProposalEditor } from './compiler/ProposalEditor';
-import { CompilerOutput } from './compiler/CompilerOutput';
+import { CompilerWorkspace } from './compiler/CompilerWorkspace';
 import { ProposalHistory } from './compiler/ProposalHistory';
 import { useProposalCompiler } from './compiler/useProposalCompiler';
 import { CompilerHeader } from './compiler/CompilerHeader';
@@ -41,22 +40,17 @@ export function CompilerPage({
       <ProtocolRulesReference />
 
       {/* Compiler Interface */}
-      <div className="grid grid-cols-2 gap-6">
-        <ProposalEditor
-          title={title}
-          setTitle={setTitle}
-          content={content}
-          setContent={setContent}
-          selectedTier={selectedTier}
-          setSelectedTier={setSelectedTier}
-          isCompiling={isCompiling}
-          handleCompile={handleCompile}
-        />
-        <CompilerOutput
-          compileResult={compileResult}
-          content={content}
-        />
-      </div>
+      <CompilerWorkspace
+        title={title}
+        setTitle={setTitle}
+        content={content}
+        setContent={setContent}
+        selectedTier={selectedTier}
+        setSelectedTier={setSelectedTier}
+        isCompiling={isCompiling}
+        handleCompile={handleCompile}
+        compileResult={compileResult}
+      />
 
       <ProposalHistory proposals={proposals} />
     </div>
