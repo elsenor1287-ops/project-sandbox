@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest';
 import { NetworkStats } from './NetworkStats';
 
 describe('NetworkStats', () => {
-  it('renders all static network statistics correctly', () => {
+  it('renders all network statistics correctly', () => {
     render(<NetworkStats />);
 
     expect(screen.getByText('Network Status')).toBeInTheDocument();
