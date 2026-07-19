@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
-import { Users, Play, RotateCcw } from 'lucide-react';
 import { calculateRCVResult } from '../hooks/useAppState';
+import { RCVHeader } from './rcv/RCVHeader';
 import { RCVStats } from './rcv/RCVStats';
 import { RCVBallotForm } from './rcv/RCVBallotForm';
 import { RCVResults } from './rcv/RCVResults';
@@ -128,34 +128,13 @@ export function VotingPage({
   return (
     <div className="p-8 space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gradient">RCV Sandbox</h1>
-          <p className="text-primary-400 mt-1">Month 2024-02 Instant Runoff Ballot</p>
-        </div>
-        <div className="flex gap-3">
-          <button
-            onClick={() => onGenerateMockVotes(5)}
-            className="btn-secondary"
-            disabled={isSimulating}
-          >
-            <Users className="w-4 h-4" />
-            Add 5 Mock Votes
-          </button>
-          <button
-            onClick={handleRunSimulation}
-            className="btn-primary"
-            disabled={submissions.length === 0 || isSimulating}
-          >
-            <Play className="w-4 h-4" />
-            {isSimulating ? 'Simulating...' : 'Run RCV Tally'}
-          </button>
-          <button onClick={onResetVoting} className="btn-ghost" disabled={isSimulating}>
-            <RotateCcw className="w-4 h-4" />
-            Reset
-          </button>
-        </div>
-      </div>
+      <RCVHeader
+        onGenerateMockVotes={onGenerateMockVotes}
+        onRunSimulation={handleRunSimulation}
+        onResetVoting={onResetVoting}
+        isSimulating={isSimulating}
+        hasSubmissions={submissions.length > 0}
+      />
 
       {/* Stats */}
       <RCVStats
