@@ -61,7 +61,6 @@ export function IdentityPage({
 
   const handleScan = async () => {
     setIsScanning(true);
-    await new Promise(r => setTimeout(r, 2000));
     setIsScanning(false);
     onCompleteStep('passport');
   };
