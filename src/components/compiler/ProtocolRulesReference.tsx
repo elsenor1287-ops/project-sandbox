@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { PROTOCOL_RULES } from '../../data/mockData';
+import { RuleTabs } from './RuleTabs';
 
 export function ProtocolRulesReference() {
   const [activeRuleTab, setActiveRuleTab] = useState<'law1' | 'law2' | 'law3'>('law1');
@@ -10,25 +11,7 @@ export function ProtocolRulesReference() {
 
   return (
     <div className="card p-6">
-      <div className="flex gap-4 mb-4">
-        {['law1', 'law2', 'law3'].map(tier => (
-          <button
-            key={tier}
-            onClick={() => setActiveRuleTab(tier as typeof activeRuleTab)}
-            className={`btn ${
-              activeRuleTab === tier
-                ? tier === 'law1'
-                  ? 'bg-danger-500/20 text-danger-300 border-danger-500/30'
-                  : tier === 'law2'
-                  ? 'bg-success-500/20 text-success-300 border-success-500/30'
-                  : 'bg-accent-500/20 text-accent-300 border-accent-500/30'
-                : 'btn-ghost'
-            }`}
-          >
-            {tier === 'law1' ? 'Law 1 Rules' : tier === 'law2' ? 'Law 2 Rules' : 'Law 3 Rules'}
-          </button>
-        ))}
-      </div>
+      <RuleTabs activeRuleTab={activeRuleTab} setActiveRuleTab={setActiveRuleTab} />
 
       <div className="space-y-3">
         {(activeRuleTab === 'law1'
