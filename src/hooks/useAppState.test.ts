@@ -3,6 +3,8 @@ import { useAppState, calculateRCVResult } from './useAppState';
 import { describe, it, expect } from 'vitest';
 import { BallotOption, BallotSubmission, Proposal } from '../types';
 
+// Note: The strict typing for the Proposal model (replacing 'any' with 'Proposal | undefined' for newProposal) is already resolved in the current working branch.
+
 describe('useAppState', () => {
   describe('submitBallot', () => {
     it('should add a ballot submission and create a new write-in option if it does not exist', () => {
