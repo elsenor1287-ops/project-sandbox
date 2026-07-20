@@ -1,7 +1,7 @@
-import { AlertOctagon } from 'lucide-react';
 import React from 'react';
 import type { IdentityState, VerificationStep } from '../types';
 import { FraudTestingPanel } from './identity/FraudTestingPanel';
+import { IdentityPageHeader } from './identity/IdentityPageHeader';
 import { IdentityStatusCard } from './identity/IdentityStatusCard';
 import { VerificationPipeline } from './identity/VerificationPipeline';
 import { VouchTokensList } from './identity/VouchTokensList';
@@ -33,19 +33,10 @@ export function IdentityPage({
   return (
     <div className="p-8 space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gradient">Identity Wallet</h1>
-          <p className="text-primary-400 mt-1">Self-sovereign credential verification</p>
-        </div>
-        <button
-          onClick={() => setShowFraudPanel(!showFraudPanel)}
-          className={`btn ${showFraudPanel ? 'btn-danger' : 'btn-secondary'}`}
-        >
-          <AlertOctagon className="w-4 h-4" />
-          Fraud Testing Suite
-        </button>
-      </div>
+      <IdentityPageHeader
+        showFraudPanel={showFraudPanel}
+        onToggleFraudPanel={() => setShowFraudPanel(!showFraudPanel)}
+      />
 
       {/* Fraud Testing Panel */}
       {showFraudPanel && (
