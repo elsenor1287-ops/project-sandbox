@@ -28,9 +28,6 @@ export function useProposalCompiler({
     setIsCompiling(true);
     setCompileResult(null);
 
-    // Simulate compilation delay
-    await new Promise(r => setTimeout(r, 1500));
-
     const violations = onCheckViolations(content);
 
     if (violations.length > 0) {

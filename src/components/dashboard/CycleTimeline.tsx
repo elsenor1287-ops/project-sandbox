@@ -6,6 +6,9 @@ interface CycleTimelineProps {
 }
 
 export function CycleTimeline({ calendarEvents }: CycleTimelineProps) {
+  const now = new Date();
+  const nowTime = now.getTime();
+
   return (
     <div className="card p-6 col-span-1">
       <h2 className="text-lg font-semibold text-primary-200 mb-4 flex items-center gap-2">
@@ -17,8 +20,8 @@ export function CycleTimeline({ calendarEvents }: CycleTimelineProps) {
         <div className="absolute left-2 top-2 bottom-2 w-0.5 bg-primary-700" />
 
         {calendarEvents.map((event) => {
-          const isPast = event.date < new Date();
-          const isCurrent = Math.abs(event.date.getTime() - Date.now()) < 86400000;
+          const isPast = event.date < now;
+          const isCurrent = Math.abs(event.date.getTime() - nowTime) < 86400000;
 
           return (
             <div key={event.id} className="relative">
