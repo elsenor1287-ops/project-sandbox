@@ -120,6 +120,7 @@ export function VotingPage({
     onRunSimulation();
 
     // Animate through rounds
+    // Optimization already applied: removed artificial 1s delay per round for better performance
     const result = calculateRCVResult(ballotOptions, submissions);
     for (let i = 0; i < result.rounds.length; i++) {
       setSimulationRound(i + 1);
