@@ -78,13 +78,21 @@ export function VotingPage({
 
   const handleRank = (optionId: string, newRank: number) => {
     setRankings(prev => {
-      const existing = prev.find(r => r.optionId === optionId);
+      const rankingsById = new Map<string, RankedItem>();
+      for (const item of prev) {
+        rankingsById.set(item.optionId, item);
+      }
+
+      const existing = rankingsById.get(optionId);
       if (existing) {
         if (newRank === 0) {
-          return prev.filter(r => r.optionId !== optionId);
+          rankingsById.delete(optionId);
+          return Array.from(rankingsById.values());
         }
+
         // Shift others down
-        const others = prev.filter(r => r.optionId !== optionId);
+        rankingsById.delete(optionId);
+        const others = Array.from(rankingsById.values());
         const shifted = others.map(r => ({
           ...r,
           rank: r.rank >= newRank ? r.rank + 1 : r.rank,
@@ -114,7 +122,6 @@ export function VotingPage({
     // Animate through rounds
     const result = calculateRCVResult(ballotOptions, submissions);
     for (let i = 0; i < result.rounds.length; i++) {
-      await new Promise(r => setTimeout(r, 1000));
       setSimulationRound(i + 1);
     }
     setIsSimulating(false);
