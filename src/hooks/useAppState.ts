@@ -127,9 +127,9 @@ export function useAppState() {
     const lowerContent = content.toLowerCase();
 
     LAW1_RULES.forEach(rule => {
-      rule.keywords.forEach(keyword => {
-        if (lowerContent.includes(keyword.toLowerCase())) {
-          violations.push(`${rule.name}: "${keyword}" detected`);
+      rule.lowerKeywords.forEach((lowerKeyword, index) => {
+        if (lowerContent.includes(lowerKeyword)) {
+          violations.push(`${rule.name}: "${rule.keywords[index]}" detected`);
         }
       });
     });
