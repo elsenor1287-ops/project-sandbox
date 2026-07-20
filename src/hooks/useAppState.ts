@@ -323,6 +323,7 @@ interface RCVRoundResult {
   nextRankings: RankedVote[][];
 }
 
+
 export function processRCVRound(
   roundNumber: number,
   currentOptions: BallotOption[],
@@ -434,8 +435,7 @@ export function calculateRCVResult(
   }
 
   if (!winner) {
-    const remainingIds = Array.from(activeOptionIds);
-    winner = options.find(opt => opt.id === remainingIds[0]) || options[0];
+    winner = resolveTiebreakerFallback(activeOptionIds, options);
   }
 
   return {
@@ -446,5 +446,7 @@ export function calculateRCVResult(
   };
 }
 
-// This optimization task has been marked as resolved as it was already fixed
-// and applied to the main branch previously.
+export function resolveTiebreakerFallback(activeOptionIds: Set<string>, options: BallotOption[]): BallotOption {
+  const remainingIds = Array.from(activeOptionIds);
+  return options.find(opt => opt.id === remainingIds[0]) || options[0];
+}
