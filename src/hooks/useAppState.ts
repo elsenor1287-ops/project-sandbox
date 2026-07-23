@@ -21,7 +21,6 @@ import {
 } from '../data/mockData';
 
 const LAW1_RULES = PROTOCOL_RULES.filter(rule => rule.law === 1);
-const MAJORITY_THRESHOLD_RATIO = 0.5;
 
 const initialState: AppState = {
   currentPage: '/dashboard',
@@ -408,9 +407,10 @@ export function calculateRCVResult(
   const rounds: RCVRound[] = [];
   let currentOptions = [...options];
   let currentRankings = submissions.map(sub => [...sub.rankings].sort((a, b) => a.rank - b.rank));
-  let activeOptionIds = new Set(options.map(opt => opt.id));
+  const activeOptionIds = new Set(options.map(opt => opt.id));
 
   const totalVotes = submissions.length;
+  const MAJORITY_THRESHOLD_RATIO = 0.5;
   const threshold = totalVotes * MAJORITY_THRESHOLD_RATIO;
 
   let roundNumber = 0;
