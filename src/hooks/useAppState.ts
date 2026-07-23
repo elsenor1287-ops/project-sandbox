@@ -28,6 +28,10 @@ const getSecureRandom = () => {
   return array[0] / (0xffffffff + 1);
 };
 
+function getSecureRandom() {
+  return crypto.getRandomValues(new Uint32Array(1))[0] / (0xffffffff + 1);
+}
+
 const initialState: AppState = {
   currentPage: '/dashboard',
   identity: INITIAL_IDENTITY,
