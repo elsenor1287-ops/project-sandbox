@@ -23,6 +23,10 @@ import {
 const LAW1_RULES = PROTOCOL_RULES.filter(rule => rule.law === 1);
 const MAJORITY_THRESHOLD_RATIO = 0.5;
 
+function getSecureRandom() {
+  return crypto.getRandomValues(new Uint32Array(1))[0] / (0xffffffff + 1);
+}
+
 const initialState: AppState = {
   currentPage: '/dashboard',
   identity: INITIAL_IDENTITY,
@@ -217,14 +221,14 @@ export function useAppState() {
         const account = accounts[i];
         if (!account.hasVoted) {
           // Generate random rankings
-          const shuffled = [...prev.ballotOptions].sort(() => Math.random() - 0.5);
-          const rankings = shuffled.slice(0, Math.floor(Math.random() * 4) + 1).map((opt, idx) => ({
+          const shuffled = [...prev.ballotOptions].sort(() => getSecureRandom() - 0.5);
+          const rankings = shuffled.slice(0, Math.floor(getSecureRandom() * 4) + 1).map((opt, idx) => ({
             optionId: opt.id,
             rank: idx + 1,
           }));
 
           // Randomly add a write-in (10% chance)
-          const writeIn = Math.random() < 0.1 ? `Citizen Initiative #${Math.floor(Math.random() * 100)}` : undefined;
+          const writeIn = getSecureRandom() < 0.1 ? `Citizen Initiative #${Math.floor(getSecureRandom() * 100)}` : undefined;
 
           account.hasVoted = true;
           if (writeIn) account.writeIns.push(writeIn);
