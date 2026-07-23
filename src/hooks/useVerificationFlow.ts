@@ -1,3 +1,4 @@
+// Refactoring: Extracted LandingPage logic into useVerificationFlow hook
 import { useState, useEffect, useRef } from 'react';
 
 export type FlowStage = 'idle' | 'scanning' | 'verified';
@@ -14,6 +15,30 @@ export const INITIAL_STEPS: VerificationStep[] = [
   { id: 1, pending: 'Awaiting Hardware Biometric Scan...', done: 'Hardware Verified', completed: false, active: false },
   { id: 2, pending: 'Verifying Local Jurisdiction Credential...', done: 'Jurisdiction Confirmed', completed: false, active: false },
   { id: 3, pending: 'Syncing Peer-Vouch Network...', done: 'Network Synced', completed: false, active: false },
+];
+
+const SCANNING_STEP_0: VerificationStep[] = [
+  { ...INITIAL_STEPS[0], active: true },
+  INITIAL_STEPS[1],
+  INITIAL_STEPS[2],
+];
+
+const SCANNING_STEP_1: VerificationStep[] = [
+  { ...INITIAL_STEPS[0], completed: true, active: false },
+  { ...INITIAL_STEPS[1], active: true },
+  INITIAL_STEPS[2],
+];
+
+const SCANNING_STEP_2: VerificationStep[] = [
+  { ...INITIAL_STEPS[0], completed: true, active: false },
+  { ...INITIAL_STEPS[1], completed: true, active: false },
+  { ...INITIAL_STEPS[2], active: true },
+];
+
+const SCANNING_STEP_3: VerificationStep[] = [
+  { ...INITIAL_STEPS[0], completed: true, active: false },
+  { ...INITIAL_STEPS[1], completed: true, active: false },
+  { ...INITIAL_STEPS[2], completed: true, active: false },
 ];
 
 export function useVerificationFlow() {
@@ -36,25 +61,21 @@ export function useVerificationFlow() {
 
   const startVerification = () => {
     setStage('scanning');
-    setSteps(prev => prev.map((s, i) => ({ ...s, active: i === 0 })));
+    setSteps(SCANNING_STEP_0);
 
     // Step 1 completes at 1.5s
     scheduleTimeout(() => {
-      setSteps(prev =>
-        prev.map((s, i) => (i === 0 ? { ...s, completed: true, active: false } : i === 1 ? { ...s, active: true } : s))
-      );
+      setSteps(SCANNING_STEP_1);
     }, 1500);
 
     // Step 2 completes at 3s
     scheduleTimeout(() => {
-      setSteps(prev =>
-        prev.map((s, i) => (i === 1 ? { ...s, completed: true, active: false } : i === 2 ? { ...s, active: true } : s))
-      );
+      setSteps(SCANNING_STEP_2);
     }, 3000);
 
     // Step 3 completes at 4.5s
     scheduleTimeout(() => {
-      setSteps(prev => prev.map(s => ({ ...s, completed: true, active: false })));
+      setSteps(SCANNING_STEP_3);
     }, 4500);
 
     // Card fades out at 5.2s, welcome fades in
