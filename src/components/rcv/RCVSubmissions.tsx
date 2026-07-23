@@ -42,10 +42,17 @@ export function RCVSubmissions({
                     {voter?.name || 'You'}
                   </td>
                   <td className="py-3 text-primary-300">
-                    {sub.rankings.sort((a, b) => a.rank - b.rank).map(r => {
-                      const opt = ballotOptionsMap.get(r.optionId) ?? optionsMap.get(r.optionId);
-                      return `${r.rank}: ${opt?.title || 'Unknown'}`;
-                    }).join(' → ')}
+                    {(() => {
+                      const sorted = [...sub.rankings].sort((a, b) => a.rank - b.rank);
+                      let result = '';
+                      for (let i = 0; i < sorted.length; i++) {
+                        const r = sorted[i];
+                        const opt = ballotOptionsMap.get(r.optionId) ?? optionsMap.get(r.optionId);
+                        if (i > 0) result += ' → ';
+                        result += `${r.rank}: ${opt?.title || 'Unknown'}`;
+                      }
+                      return result;
+                    })()}
                   </td>
                   <td className="py-3 text-primary-400">
                     {sub.writeIn || '-'}
