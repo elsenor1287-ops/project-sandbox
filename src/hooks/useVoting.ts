@@ -123,7 +123,7 @@ export function calculateRCVResult(
   }
 
   if (!winner) {
-    const remainingIds = Array.from(activeOptionIds);
+    const remainingIds = Array.from(new Set(currentOptions.map(opt => opt.id)));
     winner = options.find(opt => opt.id === remainingIds[0]) || options[0];
   }
 
