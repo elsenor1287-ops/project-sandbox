@@ -1,23 +1,10 @@
 import { useState, useCallback } from 'react';
-import type {
-  AppState,
-  PageRoute,
-  VerificationStep,
-  VouchToken,
-  Proposal,
-  BallotOption,
-  BallotSubmission,
-  RCVResult,
-  RCVRound,
-  RankedVote,
-} from '../types';
+import type { AppState, PageRoute } from '../types';
 import {
   INITIAL_IDENTITY,
   INITIAL_BALLOT_OPTIONS,
   MOCK_TEST_ACCOUNTS,
-  MOCK_VOUCH_TOKENS,
   MOCK_CALENDAR_EVENTS,
-  PROTOCOL_RULES,
 } from '../data/mockData';
 
 const LAW1_RULES = PROTOCOL_RULES.filter(rule => rule.law === 1);
@@ -317,19 +304,11 @@ export function useAppState() {
     state,
     setCurrentPage,
     // Identity
-    completeVerificationStep,
-    addVouchToken,
-    triggerFraudStrike,
-    freezeAccount,
-    resetIdentity,
+    ...identityActions,
     // Proposals
-    submitProposal,
-    checkLaw1Violations,
+    ...proposalActions,
     // Voting
-    submitBallot,
-    runRCVSimulation,
-    generateMockVotes,
-    resetVoting,
+    ...votingActions,
   };
 }
 
