@@ -27,6 +27,30 @@ const SCANNING_STEP_3: VerificationStep[] = [
   { ...INITIAL_STEPS[2], completed: true, active: false },
 ];
 
+const STEPS_SCANNING_START: VerificationStep[] = [
+  { ...INITIAL_STEPS[0], active: true },
+  INITIAL_STEPS[1],
+  INITIAL_STEPS[2],
+];
+
+const STEPS_STEP_1_COMPLETE: VerificationStep[] = [
+  { ...INITIAL_STEPS[0], completed: true, active: false },
+  { ...INITIAL_STEPS[1], active: true },
+  INITIAL_STEPS[2],
+];
+
+const STEPS_STEP_2_COMPLETE: VerificationStep[] = [
+  { ...INITIAL_STEPS[0], completed: true, active: false },
+  { ...INITIAL_STEPS[1], completed: true, active: false },
+  { ...INITIAL_STEPS[2], active: true },
+];
+
+const STEPS_STEP_3_COMPLETE: VerificationStep[] = [
+  { ...INITIAL_STEPS[0], completed: true, active: false },
+  { ...INITIAL_STEPS[1], completed: true, active: false },
+  { ...INITIAL_STEPS[2], completed: true, active: false },
+];
+
 interface LandingPageProps {
   onEnterDashboard: () => void;
 }
