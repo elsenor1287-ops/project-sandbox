@@ -20,16 +20,13 @@ interface VotingPageProps {
 
 
 
-export function VotingPage({
-  ballotOptions,
-  submissions,
-  testAccounts,
-  rcvResult,
-  onSubmitBallot,
-  onRunSimulation,
-  onGenerateMockVotes,
-  onResetVoting,
-}: VotingPageProps) {
+
+interface ConnectedBallotFormProps {
+  ballotOptions: BallotOption[];
+  onSubmitBallot: (submission: Omit<BallotSubmission, 'submittedAt'>) => void;
+}
+
+function ConnectedBallotForm({ ballotOptions, onSubmitBallot }: ConnectedBallotFormProps) {
   const {
     rankings,
     writeIn,
@@ -40,6 +37,33 @@ export function VotingPage({
     handleRank,
     getRank,
   } = useBallotState(onSubmitBallot);
+
+  return (
+    <RCVBallotForm
+      ballotOptions={ballotOptions}
+      rankings={rankings}
+      writeIn={writeIn}
+      showWriteInInput={showWriteInInput}
+      onRank={handleRank}
+      onWriteInChange={setWriteIn}
+      onToggleWriteIn={setShowWriteInInput}
+      onSubmit={handleSubmit}
+      getRank={getRank}
+    />
+  );
+}
+
+export function VotingPage({
+  ballotOptions,
+  submissions,
+  testAccounts,
+  rcvResult,
+  onSubmitBallot,
+  onRunSimulation,
+  onGenerateMockVotes,
+  onResetVoting,
+}: VotingPageProps) {
+
 
   const { isSimulating, simulationRound, handleRunSimulation } = useSimulationState(
     ballotOptions,
@@ -101,16 +125,9 @@ export function VotingPage({
 
       {/* Ballot Interface */}
       <div className="grid grid-cols-2 gap-6">
-        <RCVBallotForm
+        <ConnectedBallotForm
           ballotOptions={ballotOptions}
-          rankings={rankings}
-          writeIn={writeIn}
-          showWriteInInput={showWriteInInput}
-          onRank={handleRank}
-          onWriteInChange={setWriteIn}
-          onToggleWriteIn={setShowWriteInInput}
-          onSubmit={handleSubmit}
-          getRank={getRank}
+          onSubmitBallot={onSubmitBallot}
         />
 
         {/* RCV Results / Simulation */}
