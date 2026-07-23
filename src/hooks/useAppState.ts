@@ -34,6 +34,8 @@ function getSecureRandom() {
 
 const getSecureRandom = () => crypto.getRandomValues(new Uint32Array(1))[0] / (0xffffffff + 1);
 
+const secureRandom = () => crypto.getRandomValues(new Uint32Array(1))[0] / (0xffffffff + 1);
+
 const initialState: AppState = {
   currentPage: '/dashboard',
   identity: INITIAL_IDENTITY,
