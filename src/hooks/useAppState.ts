@@ -21,7 +21,22 @@ import {
 } from '../data/mockData';
 
 const LAW1_RULES = PROTOCOL_RULES.filter(rule => rule.law === 1);
-const MAJORITY_THRESHOLD_RATIO = 0.5;
+
+const getSecureRandom = () => {
+  const array = new Uint32Array(1);
+  crypto.getRandomValues(array);
+  return array[0] / (0xffffffff + 1);
+};
+
+function getSecureRandom() {
+  return crypto.getRandomValues(new Uint32Array(1))[0] / (0xffffffff + 1);
+}
+
+const getSecureRandom = () => crypto.getRandomValues(new Uint32Array(1))[0] / (0xffffffff + 1);
+
+const secureRandom = () => crypto.getRandomValues(new Uint32Array(1))[0] / (0xffffffff + 1);
+
+const secureRandom = () => crypto.getRandomValues(new Uint32Array(1))[0] / (0xffffffff + 1);
 
 const secureRandom = () => crypto.getRandomValues(new Uint32Array(1))[0] / (0xffffffff + 1);
 
@@ -144,7 +159,7 @@ export function useAppState() {
     const status = violations.length > 0 ? 'vetoed' : 'compiled';
 
     const newProposal: Proposal = {
-      id: `prop-${Date.now()}`,
+      id: `prop-${crypto.randomUUID()}`,
       ...proposal,
       submittedAt: new Date(),
       status,
@@ -182,7 +197,7 @@ export function useAppState() {
         } else {
           // Create new write-in option
           const newWriteInOption: BallotOption = {
-            id: `writein-${Date.now()}`,
+            id: `writein-${crypto.randomUUID()}`,
             title: submission.writeIn,
             description: 'Write-in candidate submitted by voters',
             budget: 0,
@@ -219,14 +234,14 @@ export function useAppState() {
         const account = accounts[i];
         if (!account.hasVoted) {
           // Generate random rankings
-          const shuffled = [...prev.ballotOptions].sort(() => secureRandom() - 0.5);
-          const rankings = shuffled.slice(0, Math.floor(secureRandom() * 4) + 1).map((opt, idx) => ({
+          const shuffled = [...prev.ballotOptions].sort(() => getSecureRandom() - 0.5);
+          const rankings = shuffled.slice(0, Math.floor(getSecureRandom() * 4) + 1).map((opt, idx) => ({
             optionId: opt.id,
             rank: idx + 1,
           }));
 
           // Randomly add a write-in (10% chance)
-          const writeIn = secureRandom() < 0.1 ? `Citizen Initiative #${Math.floor(secureRandom() * 100)}` : undefined;
+          const writeIn = getSecureRandom() < 0.1 ? `Citizen Initiative #${Math.floor(getSecureRandom() * 100)}` : undefined;
 
           account.hasVoted = true;
           if (writeIn) account.writeIns.push(writeIn);
@@ -265,7 +280,7 @@ export function useAppState() {
           existing.writeInCount = (existing.writeInCount || 0) + count;
         } else {
           const newWriteInOption: BallotOption = {
-            id: `writein-${Date.now()}-${crypto.randomUUID()}`,
+            id: `writein-${crypto.randomUUID()}`,
             title: writeIn,
             description: 'Write-in candidate submitted by voters',
             budget: 0,
@@ -410,9 +425,10 @@ export function calculateRCVResult(
   const rounds: RCVRound[] = [];
   let currentOptions = [...options];
   let currentRankings = submissions.map(sub => [...sub.rankings].sort((a, b) => a.rank - b.rank));
-  let activeOptionIds = new Set(options.map(opt => opt.id));
+  const activeOptionIds = new Set(options.map(opt => opt.id));
 
   const totalVotes = submissions.length;
+  const MAJORITY_THRESHOLD_RATIO = 0.5;
   const threshold = totalVotes * MAJORITY_THRESHOLD_RATIO;
 
   let roundNumber = 0;

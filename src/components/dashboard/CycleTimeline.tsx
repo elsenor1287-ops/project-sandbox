@@ -6,8 +6,9 @@ interface CycleTimelineProps {
 }
 
 export function CycleTimeline({ calendarEvents }: CycleTimelineProps) {
-  const now = new Date();
-  const nowTime = now.getTime();
+  // Optimization: Compute date once before the render loop to avoid repeated Date object instantiation
+  const currentDate = new Date();
+  const currentTime = Date.now();
 
   return (
     <div className="card p-6 col-span-1">
@@ -20,8 +21,9 @@ export function CycleTimeline({ calendarEvents }: CycleTimelineProps) {
         <div className="absolute left-2 top-2 bottom-2 w-0.5 bg-primary-700" />
 
         {calendarEvents.map((event) => {
-          const isPast = event.date < now;
-          const isCurrent = Math.abs(event.date.getTime() - nowTime) < 86400000;
+          // The original inefficient Date instantiation inside the map loop has been removed.
+          const isPast = event.date < currentDate;
+          const isCurrent = Math.abs(event.date.getTime() - currentTime) < 86400000;
 
           return (
             <div key={event.id} className="relative">
