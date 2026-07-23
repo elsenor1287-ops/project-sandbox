@@ -17,6 +17,30 @@ const INITIAL_STEPS: VerificationStep[] = [
   { id: 3, pending: 'Syncing Peer-Vouch Network...', done: 'Network Synced', completed: false, active: false },
 ];
 
+const STEPS_SCANNING_START: VerificationStep[] = [
+  { ...INITIAL_STEPS[0], active: true },
+  INITIAL_STEPS[1],
+  INITIAL_STEPS[2],
+];
+
+const STEPS_STEP_1_COMPLETE: VerificationStep[] = [
+  { ...INITIAL_STEPS[0], completed: true, active: false },
+  { ...INITIAL_STEPS[1], active: true },
+  INITIAL_STEPS[2],
+];
+
+const STEPS_STEP_2_COMPLETE: VerificationStep[] = [
+  { ...INITIAL_STEPS[0], completed: true, active: false },
+  { ...INITIAL_STEPS[1], completed: true, active: false },
+  { ...INITIAL_STEPS[2], active: true },
+];
+
+const STEPS_STEP_3_COMPLETE: VerificationStep[] = [
+  { ...INITIAL_STEPS[0], completed: true, active: false },
+  { ...INITIAL_STEPS[1], completed: true, active: false },
+  { ...INITIAL_STEPS[2], completed: true, active: false },
+];
+
 interface LandingPageProps {
   onEnterDashboard: () => void;
 }
@@ -41,25 +65,21 @@ export function LandingPage({ onEnterDashboard }: LandingPageProps) {
 
   const startVerification = () => {
     setStage('scanning');
-    setSteps(prev => prev.map((s, i) => ({ ...s, active: i === 0 })));
+    setSteps(STEPS_SCANNING_START);
 
     // Step 1 completes at 1.5s
     scheduleTimeout(() => {
-      setSteps(prev =>
-        prev.map((s, i) => (i === 0 ? { ...s, completed: true, active: false } : i === 1 ? { ...s, active: true } : s))
-      );
+      setSteps(STEPS_STEP_1_COMPLETE);
     }, 1500);
 
     // Step 2 completes at 3s
     scheduleTimeout(() => {
-      setSteps(prev =>
-        prev.map((s, i) => (i === 1 ? { ...s, completed: true, active: false } : i === 2 ? { ...s, active: true } : s))
-      );
+      setSteps(STEPS_STEP_2_COMPLETE);
     }, 3000);
 
     // Step 3 completes at 4.5s
     scheduleTimeout(() => {
-      setSteps(prev => prev.map(s => ({ ...s, completed: true, active: false })));
+      setSteps(STEPS_STEP_3_COMPLETE);
     }, 4500);
 
     // Card fades out at 5.2s, welcome fades in
