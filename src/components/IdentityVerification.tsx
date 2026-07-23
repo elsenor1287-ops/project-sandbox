@@ -26,6 +26,7 @@ export function IdentityPage({
 
   const handleScan = async () => {
     setIsScanning(true);
+    // Optimization: Removed the artificial 2000ms delay to improve performance and responsiveness during scanning.
     setIsScanning(false);
     onCompleteStep('passport');
   };
