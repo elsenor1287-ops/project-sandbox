@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { calculateRCVResult } from '../hooks/useAppState';
+import { useMemo } from 'react';
+import { useBallotState, useSimulationState } from '../hooks/useRCVState';
 import { RCVHeader } from './rcv/RCVHeader';
 import { RCVStats } from './rcv/RCVStats';
 import { RCVBallotForm } from './rcv/RCVBallotForm';
@@ -18,9 +18,39 @@ interface VotingPageProps {
   onResetVoting: () => void;
 }
 
-interface RankedItem {
-  optionId: string;
-  rank: number;
+
+
+
+interface ConnectedBallotFormProps {
+  ballotOptions: BallotOption[];
+  onSubmitBallot: (submission: Omit<BallotSubmission, 'submittedAt'>) => void;
+}
+
+function ConnectedBallotForm({ ballotOptions, onSubmitBallot }: ConnectedBallotFormProps) {
+  const {
+    rankings,
+    writeIn,
+    showWriteInInput,
+    setWriteIn,
+    setShowWriteInInput,
+    handleSubmit,
+    handleRank,
+    getRank,
+  } = useBallotState(onSubmitBallot);
+
+  return (
+    <RCVBallotForm
+      ballotOptions={ballotOptions}
+      rankings={rankings}
+      writeIn={writeIn}
+      showWriteInInput={showWriteInInput}
+      onRank={handleRank}
+      onWriteInChange={setWriteIn}
+      onToggleWriteIn={setShowWriteInInput}
+      onSubmit={handleSubmit}
+      getRank={getRank}
+    />
+  );
 }
 
 export function VotingPage({
@@ -33,11 +63,13 @@ export function VotingPage({
   onGenerateMockVotes,
   onResetVoting,
 }: VotingPageProps) {
-  const [rankings, setRankings] = useState<RankedItem[]>([]);
-  const [writeIn, setWriteIn] = useState('');
-  const [showWriteInInput, setShowWriteInInput] = useState(false);
-  const [isSimulating, setIsSimulating] = useState(false);
-  const [simulationRound, setSimulationRound] = useState(0);
+
+
+  const { isSimulating, simulationRound, handleRunSimulation } = useSimulationState(
+    ballotOptions,
+    submissions,
+    onRunSimulation
+  );
 
   const testAccountsMap = useMemo(() => {
     const map = new Map<string, TestAccount>();
@@ -65,67 +97,7 @@ export function VotingPage({
   );
 
 
-  const handleSubmit = () => {
-    onSubmitBallot({
-      voterId: 'CITIZEN-2024-01337',
-      rankings: rankings.map(r => ({ optionId: r.optionId, rank: r.rank })),
-      writeIn: writeIn || undefined,
-    });
-    setRankings([]);
-    setWriteIn('');
-    setShowWriteInInput(false);
-  };
 
-  const handleRank = (optionId: string, newRank: number) => {
-    setRankings(prev => {
-      const rankingsById = new Map<string, RankedItem>();
-      for (const item of prev) {
-        rankingsById.set(item.optionId, item);
-      }
-
-      const existing = rankingsById.get(optionId);
-      if (existing) {
-        if (newRank === 0) {
-          rankingsById.delete(optionId);
-          return Array.from(rankingsById.values());
-        }
-
-        // Shift others down
-        rankingsById.delete(optionId);
-        const others = Array.from(rankingsById.values());
-        const shifted = others.map(r => ({
-          ...r,
-          rank: r.rank >= newRank ? r.rank + 1 : r.rank,
-        }));
-        return [...shifted, { optionId, rank: newRank }].sort((a, b) => a.rank - b.rank);
-      }
-      return [...prev, { optionId, rank: newRank }].sort((a, b) => a.rank - b.rank);
-    });
-  };
-
-  // Performance optimization: Memoized map for O(1) rank lookups
-  const rankingsMap = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const r of rankings) {
-      map.set(r.optionId, r.rank);
-    }
-    return map;
-  }, [rankings]);
-
-  const getRank = (optionId: string) => rankingsMap.get(optionId) || 0;
-
-  const handleRunSimulation = async () => {
-    setIsSimulating(true);
-    setSimulationRound(0);
-    onRunSimulation();
-
-    // Animate through rounds
-    const result = calculateRCVResult(ballotOptions, submissions);
-    for (let i = 0; i < result.rounds.length; i++) {
-      setSimulationRound(i + 1);
-    }
-    setIsSimulating(false);
-  };
 
   const votedCount = submissions.length;
   const totalVoters = testAccounts.length + 1;
@@ -153,16 +125,9 @@ export function VotingPage({
 
       {/* Ballot Interface */}
       <div className="grid grid-cols-2 gap-6">
-        <RCVBallotForm
+        <ConnectedBallotForm
           ballotOptions={ballotOptions}
-          rankings={rankings}
-          writeIn={writeIn}
-          showWriteInInput={showWriteInInput}
-          onRank={handleRank}
-          onWriteInChange={setWriteIn}
-          onToggleWriteIn={setShowWriteInInput}
-          onSubmit={handleSubmit}
-          getRank={getRank}
+          onSubmitBallot={onSubmitBallot}
         />
 
         {/* RCV Results / Simulation */}
