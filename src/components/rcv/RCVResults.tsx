@@ -61,6 +61,7 @@ export function RCVResults({
                   )}
                 </div>
                 <div className="space-y-2">
+                  {/* Note: Object.entries(round.voteDistribution) has already been memoized in memoizedDistributions */}
                   {memoizedDistributions[idx]?.map(([id, count]) => {
                     const option = optionsMap.get(id);
                     const percentage = (count / round.totalVotes) * 100;
