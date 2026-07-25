@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import type { BallotSubmission, BallotOption, TestAccount } from '../../types';
 
 interface RCVSubmissionsProps {
@@ -15,6 +16,13 @@ export function RCVSubmissions({
   accountsMap,
   optionsMap,
 }: RCVSubmissionsProps) {
+  const recentSortedSubmissions = useMemo(() => {
+    return submissions.slice(-10).reverse().map(sub => ({
+      ...sub,
+      rankings: [...sub.rankings].sort((a, b) => a.rank - b.rank)
+    }));
+  }, [submissions]);
+
   if (submissions.length === 0) return null;
 
   return (
@@ -34,7 +42,7 @@ export function RCVSubmissions({
             </tr>
           </thead>
           <tbody className="text-sm">
-            {submissions.slice(-10).reverse().map((sub, idx) => {
+            {recentSortedSubmissions.map((sub, idx) => {
               const voter = testAccountsMap.get(sub.voterId) ?? accountsMap.get(sub.voterId);
               return (
                 <tr key={idx} className="border-b border-primary-700/50">
@@ -42,7 +50,7 @@ export function RCVSubmissions({
                     {voter?.name || 'You'}
                   </td>
                   <td className="py-3 text-primary-300">
-                    {[...sub.rankings].sort((a, b) => a.rank - b.rank).map(r => {
+                    {sub.rankings.map(r => {
                       const opt = ballotOptionsMap.get(r.optionId) ?? optionsMap.get(r.optionId);
                       return `${r.rank}: ${opt?.title || 'Unknown'}`;
                     }).join(' → ')}
