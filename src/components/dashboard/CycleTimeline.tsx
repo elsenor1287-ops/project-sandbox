@@ -9,6 +9,7 @@ export function CycleTimeline({ calendarEvents }: CycleTimelineProps) {
   // Optimization: Compute date once before the render loop to avoid repeated Date object instantiation
   const currentDate = new Date();
   const currentTime = Date.now();
+  const dateFormatter = new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' });
 
   return (
     <div className="card p-6 col-span-1">
@@ -45,10 +46,7 @@ export function CycleTimeline({ calendarEvents }: CycleTimelineProps) {
               >
                 <p className="font-medium text-primary-200">{event.title}</p>
                 <p className="text-xs text-primary-400 mt-1">
-                  {event.date.toLocaleDateString('en-US', {
-                    month: 'short',
-                    day: 'numeric',
-                  })}
+                  {dateFormatter.format(event.date)}
                 </p>
               </div>
             </div>
