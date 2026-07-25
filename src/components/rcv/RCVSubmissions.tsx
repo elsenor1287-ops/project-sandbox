@@ -17,11 +17,17 @@ export function RCVSubmissions({
   optionsMap,
 }: RCVSubmissionsProps) {
   const recentSortedSubmissions = useMemo(() => {
-    return submissions.slice(-10).reverse().map(sub => ({
-      ...sub,
-      rankings: [...sub.rankings].sort((a, b) => a.rank - b.rank)
-    }));
-  }, [submissions]);
+    return submissions.slice(-10).reverse().map(sub => {
+      const sortedRankings = [...sub.rankings].sort((a, b) => a.rank - b.rank);
+      return {
+        ...sub,
+        rankingsDisplay: sortedRankings.map(r => {
+          const opt = ballotOptionsMap.get(r.optionId) ?? optionsMap.get(r.optionId);
+          return `${r.rank}: ${opt?.title || 'Unknown'}`;
+        }).join(' → ')
+      };
+    });
+  }, [submissions, ballotOptionsMap, optionsMap]);
 
   if (submissions.length === 0) return null;
 
@@ -50,10 +56,7 @@ export function RCVSubmissions({
                     {voter?.name || 'You'}
                   </td>
                   <td className="py-3 text-primary-300">
-                    {sub.rankings.map(r => {
-                      const opt = ballotOptionsMap.get(r.optionId) ?? optionsMap.get(r.optionId);
-                      return `${r.rank}: ${opt?.title || 'Unknown'}`;
-                    }).join(' → ')}
+                    {sub.rankingsDisplay}
                   </td>
                   <td className="py-3 text-primary-400">
                     {sub.writeIn || '-'}
