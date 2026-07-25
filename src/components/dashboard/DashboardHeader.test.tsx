@@ -8,19 +8,27 @@ describe('DashboardHeader Component', () => {
     const cycleName = 'Test Cycle 123';
     const { getByText } = render(<DashboardHeader currentCycleName={cycleName} />);
 
-    expect(getByText('Governance Dashboard')).toBeInTheDocument();
-    expect(getByText('Real-time overview of Project Sandbox')).toBeInTheDocument();
-    expect(getByText('Current Cycle')).toBeInTheDocument();
-    expect(getByText(cycleName)).toBeInTheDocument();
+    [
+      'Governance Dashboard',
+      'Real-time overview of Project Sandbox',
+      'Current Cycle',
+      cycleName
+    ].forEach(text => {
+      expect(getByText(text)).toBeInTheDocument();
+    });
   });
 
   it('should render correctly with an empty cycle name', () => {
     const cycleName = '';
     const { container, getByText } = render(<DashboardHeader currentCycleName={cycleName} />);
 
-    expect(getByText('Governance Dashboard')).toBeInTheDocument();
-    expect(getByText('Real-time overview of Project Sandbox')).toBeInTheDocument();
-    expect(getByText('Current Cycle')).toBeInTheDocument();
+    [
+      'Governance Dashboard',
+      'Real-time overview of Project Sandbox',
+      'Current Cycle'
+    ].forEach(text => {
+      expect(getByText(text)).toBeInTheDocument();
+    });
 
     const cycleNameElements = container.querySelectorAll('p.text-xs.text-primary-500');
     expect(cycleNameElements.length).toBe(1);
