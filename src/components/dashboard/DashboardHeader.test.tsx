@@ -3,15 +3,19 @@ import { describe, it, expect } from 'vitest';
 
 import { DashboardHeader } from './DashboardHeader';
 
+const EXPECTED_TEXTS = [
+  'Governance Dashboard',
+  'Real-time overview of Project Sandbox',
+  'Current Cycle'
+];
+
 describe('DashboardHeader Component', () => {
   it('should render correctly with a given cycle name', () => {
     const cycleName = 'Test Cycle 123';
     const { getByText } = render(<DashboardHeader currentCycleName={cycleName} />);
 
     [
-      'Governance Dashboard',
-      'Real-time overview of Project Sandbox',
-      'Current Cycle',
+      ...EXPECTED_TEXTS,
       cycleName
     ].forEach(text => {
       expect(getByText(text)).toBeInTheDocument();
@@ -22,11 +26,7 @@ describe('DashboardHeader Component', () => {
     const cycleName = '';
     const { container, getByText } = render(<DashboardHeader currentCycleName={cycleName} />);
 
-    [
-      'Governance Dashboard',
-      'Real-time overview of Project Sandbox',
-      'Current Cycle'
-    ].forEach(text => {
+    EXPECTED_TEXTS.forEach(text => {
       expect(getByText(text)).toBeInTheDocument();
     });
 
