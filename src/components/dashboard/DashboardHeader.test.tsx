@@ -37,9 +37,10 @@ describe('DashboardHeader Component', () => {
 
   it('should render the Clock icon', () => {
     const { container } = render(<DashboardHeader currentCycleName="Any" />);
+    const CLOCK_CLASS = 'lucide-clock';
 
     const svgs = container.querySelectorAll('svg');
     expect(svgs.length).toBe(1);
-    expect(svgs[0]).toHaveClass('lucide-clock');
+    expect(svgs[0]).toHaveClass(CLOCK_CLASS);
   });
 });
