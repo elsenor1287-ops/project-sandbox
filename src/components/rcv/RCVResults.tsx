@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { BarChart3, Trophy } from 'lucide-react';
 import type { RCVResult, BallotOption } from '../../types';
 
@@ -13,11 +12,6 @@ export function RCVResults({
   simulationRound,
   optionsMap,
 }: RCVResultsProps) {
-  const memoizedDistributions = useMemo(() => {
-    if (!rcvResult) return [];
-    return rcvResult.rounds.map(round => Object.entries(round.voteDistribution));
-  }, [rcvResult]);
-
   return (
     <div className="card p-6">
       <h2 className="text-lg font-semibold text-primary-200 mb-4 flex items-center gap-2">
@@ -61,8 +55,7 @@ export function RCVResults({
                   )}
                 </div>
                 <div className="space-y-2">
-                  {/* Note: Object.entries(round.voteDistribution) has already been memoized in memoizedDistributions */}
-                  {memoizedDistributions[idx]?.map(([id, count]) => {
+                  {Object.entries(round.voteDistribution).map(([id, count]) => {
                     const option = optionsMap.get(id);
                     const percentage = (count / round.totalVotes) * 100;
                     const isWinner = round.winner === id;
