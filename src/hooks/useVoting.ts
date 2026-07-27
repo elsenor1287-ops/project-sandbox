@@ -68,7 +68,7 @@ export function processRCVRound(
   const nextOptions = currentOptions.filter(opt => opt.id !== loserId);
 
   // Optimization: Create a Set of current option IDs for O(1) lookup
-  const currentOptionIds = new Set(nextOptions.map(opt => opt.id));
+  const currentOptionIds = nextOptions.reduce((set, opt) => set.add(opt.id), new Set<string>());
 
   // Redistribute votes
   const nextRankings = currentRankings.map(rankings =>
