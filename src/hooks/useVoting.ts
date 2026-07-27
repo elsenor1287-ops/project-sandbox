@@ -37,8 +37,7 @@ export function processRCVRound(
   let winnerId: string | undefined;
   let loserId: string | undefined;
 
-  for (const id in voteDistribution) {
-    const votes = voteDistribution[id];
+  for (const [id, votes] of Object.entries(voteDistribution)) {
     if (votes > maxVotes) {
       maxVotes = votes;
       winnerId = id;
