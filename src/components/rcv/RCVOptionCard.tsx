@@ -18,7 +18,7 @@ export function RCVOptionCard({ option, currentRank, onRank }: RCVOptionCardProp
         {/* Rank Controls */}
         <div className="flex flex-col gap-1">
           <button
-            onClick={() => onRank(option.id, currentRank > 0 ? currentRank - 1 || 1 : 1)}
+            onClick={() => onRank(option.id, Math.max(1, currentRank - 1))}
             className="w-8 h-6 rounded flex items-center justify-center bg-primary-700 hover:bg-primary-600 text-primary-300 hover:text-primary-100 transition-colors"
             disabled={currentRank === 0}
           >
