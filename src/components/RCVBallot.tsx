@@ -71,15 +71,7 @@ export function VotingPage({
     onRunSimulation
   );
 
-  const testAccountsMap = useMemo(() => {
-    const map = new Map<string, TestAccount>();
-    for (const acc of testAccounts) {
-      map.set(acc.id, acc);
-    }
-    return map;
-  }, [testAccounts]);
-
-  const ballotOptionsMap = useMemo(() => {
+  const optionsMap = useMemo(() => {
     const map = new Map<string, BallotOption>();
     for (const opt of ballotOptions) {
       map.set(opt.id, opt);
@@ -87,14 +79,13 @@ export function VotingPage({
     return map;
   }, [ballotOptions]);
 
-  const optionsMap = useMemo(
-    () => new Map(ballotOptions.map(o => [o.id, o])),
-    [ballotOptions]
-  );
-  const accountsMap = useMemo(
-    () => new Map(testAccounts.map(a => [a.id, a])),
-    [testAccounts]
-  );
+  const accountsMap = useMemo(() => {
+    const map = new Map<string, TestAccount>();
+    for (const acc of testAccounts) {
+      map.set(acc.id, acc);
+    }
+    return map;
+  }, [testAccounts]);
 
 
 
@@ -141,8 +132,6 @@ export function VotingPage({
       {/* Recent Submissions */}
       <RCVSubmissions
         submissions={submissions}
-        testAccountsMap={testAccountsMap}
-        ballotOptionsMap={ballotOptionsMap}
         accountsMap={accountsMap}
         optionsMap={optionsMap}
       />

@@ -3,16 +3,12 @@ import type { BallotSubmission, BallotOption, TestAccount } from '../../types';
 
 interface RCVSubmissionsProps {
   submissions: BallotSubmission[];
-  testAccountsMap: Map<string, TestAccount>;
-  ballotOptionsMap: Map<string, BallotOption>;
   accountsMap: Map<string, TestAccount>;
   optionsMap: Map<string, BallotOption>;
 }
 
 export function RCVSubmissions({
   submissions,
-  testAccountsMap,
-  ballotOptionsMap,
   accountsMap,
   optionsMap,
 }: RCVSubmissionsProps) {
@@ -20,7 +16,7 @@ export function RCVSubmissions({
     return submissions.slice(-10).reverse().map(sub => {
       const sortedRankings = [...sub.rankings].sort((a, b) => a.rank - b.rank);
       const formattedRankings = sortedRankings.map(r => {
-        const opt = ballotOptionsMap.get(r.optionId) ?? optionsMap.get(r.optionId);
+        const opt = optionsMap.get(r.optionId);
         return `${r.rank}: ${opt?.title || 'Unknown'}`;
       }).join(' → ');
       return {
@@ -28,7 +24,7 @@ export function RCVSubmissions({
         formattedRankings
       };
     });
-  }, [submissions, ballotOptionsMap, optionsMap]);
+  }, [submissions, optionsMap]);
 
   if (submissions.length === 0) return null;
 
@@ -50,7 +46,7 @@ export function RCVSubmissions({
           </thead>
           <tbody className="text-sm">
             {recentSortedSubmissions.map((sub, idx) => {
-              const voter = testAccountsMap.get(sub.voterId) ?? accountsMap.get(sub.voterId);
+              const voter = accountsMap.get(sub.voterId);
               return (
                 <tr key={idx} className="border-b border-primary-700/50">
                   <td className="py-3 text-primary-200">
