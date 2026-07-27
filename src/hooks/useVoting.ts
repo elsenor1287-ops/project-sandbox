@@ -32,22 +32,20 @@ export function processRCVRound(
     }
   });
 
-  let maxVotes = -Infinity;
-  let minVotes = Infinity;
-  let winnerId: string | undefined;
-  let loserId: string | undefined;
-
-  for (const id in voteDistribution) {
-    const votes = voteDistribution[id];
-    if (votes > maxVotes) {
-      maxVotes = votes;
-      winnerId = id;
+  const { maxVotes, minVotes, winnerId, loserId } = Object.entries(voteDistribution).reduce(
+    (acc, [id, votes]) => ({
+      maxVotes: votes > acc.maxVotes ? votes : acc.maxVotes,
+      winnerId: votes > acc.maxVotes ? id : acc.winnerId,
+      minVotes: votes < acc.minVotes ? votes : acc.minVotes,
+      loserId: votes < acc.minVotes ? id : acc.loserId,
+    }),
+    {
+      maxVotes: -Infinity,
+      minVotes: Infinity,
+      winnerId: undefined as string | undefined,
+      loserId: undefined as string | undefined,
     }
-    if (votes < minVotes) {
-      minVotes = votes;
-      loserId = id;
-    }
-  }
+  );
 
   // Check for winner
   if (maxVotes > threshold) {
