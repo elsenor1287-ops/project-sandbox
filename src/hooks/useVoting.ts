@@ -97,7 +97,6 @@ export function calculateRCVResult(
   const rounds: RCVRound[] = [];
   let currentOptions = [...options];
   let currentRankings = submissions.map(sub => [...sub.rankings].sort((a, b) => a.rank - b.rank));
-  let activeOptionIds = new Set(options.map(opt => opt.id));
 
   const totalVotes = submissions.length;
   const threshold = totalVotes * MAJORITY_THRESHOLD_RATIO;
@@ -123,8 +122,8 @@ export function calculateRCVResult(
   }
 
   if (!winner) {
-    const remainingIds = Array.from(new Set(currentOptions.map(opt => opt.id)));
-    winner = options.find(opt => opt.id === remainingIds[0]) || options[0];
+    const remainingId = currentOptions[0]?.id;
+    winner = options.find(opt => opt.id === remainingId) || options[0];
   }
 
   return {
