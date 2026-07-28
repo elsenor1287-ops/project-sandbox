@@ -49,6 +49,32 @@ describe('useBallotState', () => {
     ]);
   });
 
+  it('should get rank for an option using getRank', () => {
+    const onSubmitMock = vi.fn();
+    const { result } = renderHook(() => useBallotState(onSubmitMock));
+    act(() => {
+      result.current.handleRank('opt1', 2);
+    });
+    expect(result.current.getRank('opt1')).toBe(2);
+    expect(result.current.getRank('opt2')).toBe(0);
+  });
+
+  it('should handle submitting the ballot without writeIn', () => {
+    const onSubmitMock = vi.fn();
+    const { result } = renderHook(() => useBallotState(onSubmitMock));
+    act(() => {
+      result.current.handleRank('opt1', 1);
+    });
+    act(() => {
+      result.current.handleSubmit();
+    });
+    expect(onSubmitMock).toHaveBeenCalledWith({
+      voterId: 'CITIZEN-2024-01337',
+      rankings: [{ optionId: 'opt1', rank: 1 }],
+      writeIn: undefined,
+    });
+  });
+
   it('should handle submitting the ballot and resetting state', () => {
     const onSubmitMock = vi.fn();
     const { result } = renderHook(() => useBallotState(onSubmitMock));
