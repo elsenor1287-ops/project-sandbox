@@ -44,6 +44,28 @@ describe('useProposals', () => {
       const violations = result.current.checkLaw1Violations('');
       expect(violations).toEqual([]);
     });
+
+    it('should detect substring matches due to simple string matching (false positives)', () => {
+      const { result } = renderHook(() => useProposals(mockSetState));
+      const violations = result.current.checkLaw1Violations('The urban speech community and piano trials.');
+      expect(violations).toHaveLength(2);
+      expect(violations).toContain('First Amendment Shield: "ban speech" detected');
+      expect(violations).toContain('Fifth Amendment Shield: "no trial" detected');
+    });
+
+    it('should fail to detect violations with irregular spacing (false negatives)', () => {
+      const { result } = renderHook(() => useProposals(mockSetState));
+      const violations = result.current.checkLaw1Violations('We will ban   speech.');
+      expect(violations).toHaveLength(0);
+    });
+
+    it('should detect violations across newlines and with punctuation', () => {
+      const { result } = renderHook(() => useProposals(mockSetState));
+      const violations = result.current.checkLaw1Violations('We will:\n- censor the media\n- seize weapons.');
+      expect(violations).toHaveLength(2);
+      expect(violations).toContain('First Amendment Shield: "censor" detected');
+      expect(violations).toContain('Second Amendment Shield: "seize weapons" detected');
+    });
   });
 
   describe('submitProposal', () => {
