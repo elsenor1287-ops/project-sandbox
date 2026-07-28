@@ -37,6 +37,16 @@ describe('useAppState', () => {
       expect(result.current.state.identity.verificationStep).toBe('complete');
       expect(result.current.state.identity.status).toBe('active');
     });
+
+    it('should handle unhandled step complete gracefully without state changes', () => {
+      const { result } = renderHook(() => useAppState());
+
+      act(() => {
+        result.current.completeVerificationStep('complete');
+      });
+
+      expect(result.current.state.identity.verificationStep).toBe('passport');
+    });
   });
 
   describe('triggerFraudStrike', () => {
