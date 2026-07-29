@@ -168,4 +168,29 @@ describe('calculateRCVResult threshold logic', () => {
     // opt_non_existent shouldn't be in distribution
     expect(result.rounds[0].voteDistribution['opt_non_existent']).toBeUndefined();
   });
+
+  it('keeps the threshold based on initial total votes even when ballots are exhausted', () => {
+    // 5 voters. Initial threshold should be 5 * 0.5 = 2.5
+    // After round 1, opt3 is eliminated. v5's ballot exhausts (no second choice).
+    // In round 2, total active ballots is 4, but threshold MUST remain 2.5.
+    const submissions: BallotSubmission[] = [
+      { voterId: 'v1', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v2', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v3', rankings: [{ optionId: 'opt2', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v4', rankings: [{ optionId: 'opt2', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v5', rankings: [{ optionId: 'opt3', rank: 1 }], submittedAt: new Date() },
+    ];
+
+    const result = calculateRCVResult(options, submissions);
+
+    expect(result.totalVotes).toBe(5);
+
+    // Check round 1 threshold
+    expect(result.rounds[0].threshold).toBe(2.5);
+    expect(result.rounds[0].eliminatedOptionId).toBe('opt3');
+
+    // Check round 2 threshold - should still be 2.5, not 2.0 (from 4 remaining ballots)
+    expect(result.rounds.length).toBeGreaterThan(1);
+    expect(result.rounds[1].threshold).toBe(2.5);
+  });
 });
