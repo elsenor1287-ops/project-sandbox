@@ -95,4 +95,25 @@ describe('useBallotState', () => {
     expect(result.current.writeIn).toBe('');
     expect(result.current.showWriteInInput).toBe(false);
   });
+
+  it('should handle updating an existing rank and shift down ranks that are >= the new rank', () => {
+    const onSubmitMock = vi.fn();
+    const { result } = renderHook(() => useBallotState(onSubmitMock));
+    act(() => {
+      result.current.handleRank('opt1', 1);
+      result.current.handleRank('opt2', 2);
+      result.current.handleRank('opt3', 3);
+    });
+
+    act(() => {
+      result.current.handleRank('opt3', 2);
+    });
+
+    expect(result.current.rankings).toEqual([
+      { optionId: 'opt1', rank: 1 },
+      { optionId: 'opt3', rank: 2 },
+      { optionId: 'opt2', rank: 3 },
+    ]);
+  });
+
 });
