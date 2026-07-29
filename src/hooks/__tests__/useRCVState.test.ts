@@ -34,6 +34,40 @@ describe('useBallotState', () => {
     ]);
   });
 
+  it('should not shift ranks that are less than the new rank when updating', () => {
+    const onSubmitMock = vi.fn();
+    const { result } = renderHook(() => useBallotState(onSubmitMock));
+    act(() => {
+      result.current.handleRank('opt1', 1);
+      result.current.handleRank('opt2', 2);
+      result.current.handleRank('opt3', 3);
+    });
+    act(() => {
+      // Move opt3 from rank 3 to rank 2.
+      // opt1 (rank 1) is < 2, so it should not be shifted.
+      // opt2 (rank 2) is >= 2, so it should be shifted to 3.
+      result.current.handleRank('opt3', 2);
+    });
+    expect(result.current.rankings).toEqual([
+      { optionId: 'opt1', rank: 1 },
+      { optionId: 'opt3', rank: 2 },
+      { optionId: 'opt2', rank: 3 },
+    ]);
+  });
+
+  it('should handle adding new ranks out of order and sorting them correctly', () => {
+    const onSubmitMock = vi.fn();
+    const { result } = renderHook(() => useBallotState(onSubmitMock));
+    act(() => {
+      result.current.handleRank('opt1', 2);
+      result.current.handleRank('opt2', 1);
+    });
+    expect(result.current.rankings).toEqual([
+      { optionId: 'opt2', rank: 1 },
+      { optionId: 'opt1', rank: 2 },
+    ]);
+  });
+
   it('should handle removing a rank when newRank is 0', () => {
     const onSubmitMock = vi.fn();
     const { result } = renderHook(() => useBallotState(onSubmitMock));
