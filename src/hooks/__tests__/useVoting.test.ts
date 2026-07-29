@@ -61,4 +61,111 @@ describe('calculateRCVResult threshold logic', () => {
     expect(result.winner).toBeDefined();
     expect(['opt1', 'opt2', 'opt3']).toContain(result.winner.id);
   });
+
+  it('handles fractional thresholds correctly (odd number of votes)', () => {
+    // 3 voters, threshold = 1.5. 2 votes is > 1.5.
+    const submissions: BallotSubmission[] = [
+      { voterId: 'v1', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v2', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v3', rankings: [{ optionId: 'opt2', rank: 1 }], submittedAt: new Date() },
+    ];
+
+    const result = calculateRCVResult(options, submissions);
+    expect(result.rounds.length).toBe(1);
+    expect(result.rounds[0].winner).toBe('opt1');
+    expect(result.winner.id).toBe('opt1');
+  });
+
+  it('handles 0 submissions (threshold = 0, maxVotes = 0)', () => {
+    const submissions: BallotSubmission[] = [];
+
+    const result = calculateRCVResult(options, submissions);
+
+    // totalVotes = 0, threshold = 0.
+    // round 1: maxVotes = 0, threshold = 0. 0 > 0 is false.
+    // it will eliminate options until 1 is left.
+    expect(result.totalVotes).toBe(0);
+    expect(result.winner).toBeDefined();
+    expect(result.rounds.length).toBeGreaterThan(0);
+    result.rounds.forEach(round => {
+      expect(round.threshold).toBe(0);
+      expect(round.winner).toBeUndefined();
+    });
+  });
+
+  it('handles submissions with empty rankings (threshold > 0, maxVotes = 0)', () => {
+    const submissions: BallotSubmission[] = [
+      { voterId: 'v1', rankings: [], submittedAt: new Date() },
+      { voterId: 'v2', rankings: [], submittedAt: new Date() },
+    ];
+
+    const result = calculateRCVResult(options, submissions);
+
+    // totalVotes = 2, threshold = 1.
+    // maxVotes = 0 in all rounds.
+    expect(result.totalVotes).toBe(2);
+    expect(result.winner).toBeDefined();
+    expect(result.rounds.length).toBeGreaterThan(0);
+    result.rounds.forEach(round => {
+      expect(round.threshold).toBe(1);
+      expect(round.winner).toBeUndefined();
+    });
+  });
+
+  it('stops at 10 rounds max to prevent infinite loops', () => {
+    // Generate 12 options and 1 vote for each to force 11 eliminations
+    const manyOptions: BallotOption[] = Array.from({ length: 12 }, (_, i) => ({
+      id: `opt${i}`, title: `Option ${i}`, description: '', budget: 0, category: 'other', voteCount: 0, isWriteIn: false
+    }));
+    const manySubmissions: BallotSubmission[] = Array.from({ length: 12 }, (_, i) => ({
+      voterId: `v${i}`, rankings: [{ optionId: `opt${i}`, rank: 1 }], submittedAt: new Date()
+    }));
+
+    const result = calculateRCVResult(manyOptions, manySubmissions);
+
+    // It should stop at exactly 10 rounds due to roundNumber < 10 limit
+    expect(result.rounds.length).toBe(10);
+    expect(result.winner).toBeDefined();
+  });
+
+  it('handles options length === 1 at start', () => {
+    const singleOption: BallotOption[] = [
+      { id: 'opt1', title: 'Option 1', description: '', budget: 0, category: 'other', voteCount: 0, isWriteIn: false }
+    ];
+    const submissions: BallotSubmission[] = [
+      { voterId: 'v1', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() }
+    ];
+
+    const result = calculateRCVResult(singleOption, submissions);
+    expect(result.rounds.length).toBe(0); // While loop doesn't execute
+    expect(result.winner).toBeDefined();
+    expect(result.winner.id).toBe('opt1');
+  });
+
+  it('handles empty options list safely (returns undefined winner which gets type asserted)', () => {
+    const emptyOptions: BallotOption[] = [];
+    const submissions: BallotSubmission[] = [];
+
+    const result = calculateRCVResult(emptyOptions, submissions);
+    expect(result.rounds.length).toBe(0);
+    expect(result.winner).toBeUndefined(); // options[0] is undefined
+  });
+
+  it('ignores votes for options not present in currentOptions', () => {
+    // 2 voters for opt1, 1 voter for non-existent option
+    const submissions: BallotSubmission[] = [
+      { voterId: 'v1', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v2', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v3', rankings: [{ optionId: 'opt_non_existent', rank: 1 }], submittedAt: new Date() },
+    ];
+
+    const result = calculateRCVResult(options, submissions);
+    // Total votes is still 3 (since there are 3 submissions). Threshold is 1.5.
+    // opt1 gets 2 votes, which > 1.5.
+    expect(result.rounds.length).toBe(1);
+    expect(result.winner.id).toBe('opt1');
+    expect(result.rounds[0].voteDistribution['opt1']).toBe(2);
+    // opt_non_existent shouldn't be in distribution
+    expect(result.rounds[0].voteDistribution['opt_non_existent']).toBeUndefined();
+  });
 });
