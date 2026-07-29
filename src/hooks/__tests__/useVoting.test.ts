@@ -238,4 +238,43 @@ describe('calculateRCVResult threshold logic', () => {
     expect(result.rounds[0].winner).toBe('opt2');
     expect(result.winner.id).toBe('opt2');
   });
+
+  it('does not declare a winner if redistributed votes push a candidate exactly to the threshold', () => {
+    // 6 voters, threshold is 3
+    const submissions: BallotSubmission[] = [
+      { voterId: 'v1', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v2', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v3', rankings: [{ optionId: 'opt2', rank: 1 }, { optionId: 'opt1', rank: 2 }], submittedAt: new Date() },
+      { voterId: 'v4', rankings: [{ optionId: 'opt3', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v5', rankings: [{ optionId: 'opt3', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v6', rankings: [{ optionId: 'opt3', rank: 1 }], submittedAt: new Date() },
+    ];
+
+    const result = calculateRCVResult(options, submissions);
+
+    // Round 1: opt3 has 3, opt1 has 2, opt2 has 1. No one > 3. opt2 eliminated.
+    // Round 2: opt3 has 3, opt1 has 3. No one > 3.
+    expect(result.rounds.length).toBeGreaterThan(1);
+    expect(result.rounds[0].winner).toBeUndefined();
+    expect(result.rounds[1].winner).toBeUndefined();
+    expect(result.rounds[1].voteDistribution['opt1']).toBe(3);
+  });
+
+  it('does not bypass threshold even if a candidate has 100% of the active votes due to empty ballots', () => {
+    // 4 voters, threshold = 2. Only 1 active vote.
+    const submissions: BallotSubmission[] = [
+      { voterId: 'v1', rankings: [{ optionId: 'opt1', rank: 1 }], submittedAt: new Date() },
+      { voterId: 'v2', rankings: [], submittedAt: new Date() },
+      { voterId: 'v3', rankings: [], submittedAt: new Date() },
+      { voterId: 'v4', rankings: [], submittedAt: new Date() },
+    ];
+
+    const result = calculateRCVResult(options, submissions);
+
+    // opt1 gets 1 vote. 1 is not > 2.
+    // So opt1 does not win immediately despite having 100% of active votes.
+    expect(result.rounds.length).toBeGreaterThan(1);
+    expect(result.rounds[0].winner).toBeUndefined();
+    expect(result.winner.id).toBe('opt1');
+  });
 });
