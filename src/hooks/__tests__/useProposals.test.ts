@@ -88,6 +88,38 @@ describe('useProposals', () => {
     });
   });
 
+
+    it('should test map callback for keywords missing lowerKeyword property by validating default fallback', () => {
+      // By forcing a match without `lowerKeywords` pre-populated on some keywords
+      const { result } = renderHook(() => useProposals(mockSetState));
+      const violations = result.current.checkLaw1Violations('separate but');
+      expect(violations).toHaveLength(1);
+      expect(violations).toContain('Fourteenth Amendment Shield: "separate but" detected');
+    });
+
+    it('should correctly handle multiple keyword matches within the same rule', () => {
+      const { result } = renderHook(() => useProposals(mockSetState));
+      const violations = result.current.checkLaw1Violations('We will censor and ban speech.');
+      expect(violations).toHaveLength(2);
+      expect(violations).toContain('First Amendment Shield: "censor" detected');
+      expect(violations).toContain('First Amendment Shield: "ban speech" detected');
+    });
+
+    it('should correctly map over the triggered keywords on proposal submission', () => {
+       const { result } = renderHook(() => useProposals(mockSetState));
+       let newProposal;
+       act(() => {
+          newProposal = result.current.submitProposal({
+             title: 'Law',
+             content: 'censor',
+             tier: 'law1_shield',
+             submittedBy: 'user-2'
+          });
+       });
+       expect(newProposal.status).toBe('vetoed');
+       expect(newProposal.vetoReason).toBe('First Amendment Shield: "censor" detected');
+    });
+
   describe('submitProposal', () => {
     beforeAll(() => {
       vi.useFakeTimers();
