@@ -4,9 +4,14 @@ import { vi, describe, it, expect, beforeEach, beforeAll, afterAll } from 'vites
 
 describe('useProposals', () => {
   const mockSetState = vi.fn();
+  let currentState: any;
 
   beforeEach(() => {
+    currentState = { proposals: [{ id: 'existing-1', title: 'Existing' }] };
     mockSetState.mockClear();
+    mockSetState.mockImplementation((updater: any) => {
+      currentState = typeof updater === 'function' ? updater(currentState) : updater;
+    });
   });
 
   describe('checkLaw1Violations', () => {
@@ -66,6 +71,21 @@ describe('useProposals', () => {
       expect(violations).toContain('First Amendment Shield: "censor" detected');
       expect(violations).toContain('Second Amendment Shield: "seize weapons" detected');
     });
+
+    it('should handle edge cases where lowerKeywords falls back to runtime map', () => {
+      // The memoized mapping of PROTOCOL_RULES is verified here to ensure case insensitivity
+      // works even when rules rely on the fallback map(k => k.toLowerCase()) behavior.
+      const { result } = renderHook(() => useProposals(mockSetState));
+      const violations = result.current.checkLaw1Violations('We must SiLeNcE the press.');
+      expect(violations).toContain('First Amendment Shield: "silence" detected');
+    });
+
+    it('should correctly detect partial substring matches embedded in other words', () => {
+      const { result } = renderHook(() => useProposals(mockSetState));
+      // "censor" embedded inside "censorship"
+      const violations = result.current.checkLaw1Violations('The new censorship board will decide.');
+      expect(violations).toContain('First Amendment Shield: "censor" detected');
+    });
   });
 
   describe('submitProposal', () => {
@@ -105,6 +125,8 @@ describe('useProposals', () => {
       expect(newProposal.submittedAt).toEqual(new Date('2024-01-01T12:00:00Z'));
 
       expect(mockSetState).toHaveBeenCalledTimes(1);
+      expect(currentState.proposals).toHaveLength(2);
+      expect(currentState.proposals[1]).toMatchObject({ title: 'New Park', status: 'compiled' });
     });
 
     it('should create a vetoed proposal when violations are detected', () => {
@@ -129,6 +151,8 @@ describe('useProposals', () => {
       });
 
       expect(mockSetState).toHaveBeenCalledTimes(1);
+      expect(currentState.proposals).toHaveLength(2);
+      expect(currentState.proposals[1]).toMatchObject({ title: 'Bad Law', status: 'vetoed' });
     });
   });
 });
