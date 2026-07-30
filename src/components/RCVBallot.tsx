@@ -1,13 +1,10 @@
-<<<<<<< Updated upstream
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useBallotState, useSimulationState } from '../hooks/useRCVState';
 import { RCVHeader } from './rcv/RCVHeader';
 import { RCVStats } from './rcv/RCVStats';
 import { RCVBallotForm } from './rcv/RCVBallotForm';
 import { RCVResults } from './rcv/RCVResults';
 import { RCVSubmissions } from './rcv/RCVSubmissions';
-=======
-import { useState, useMemo } from 'react';
 import {
   Vote,
   BarChart3,
@@ -24,7 +21,6 @@ import {
   DollarSign,
   AlertTriangle,
 } from 'lucide-react';
->>>>>>> Stashed changes
 import type { BallotOption, BallotSubmission, RCVResult, TestAccount } from '../types';
 
 interface VotingPageProps {
@@ -83,15 +79,6 @@ export function VotingPage({
   onGenerateMockVotes,
   onResetVoting,
 }: VotingPageProps) {
-<<<<<<< Updated upstream
-
-
-  const { isSimulating, simulationRound, handleRunSimulation } = useSimulationState(
-    ballotOptions,
-    submissions,
-    onRunSimulation
-  );
-=======
   const [rankings, setRankings] = useState<RankedItem[]>([]);
   const BUDGET_CAP = 5000000;
 
@@ -107,19 +94,14 @@ export function VotingPage({
 
   const [writeIn, setWriteIn] = useState('');
   const [showWriteInInput, setShowWriteInInput] = useState(false);
-  const [isSimulating, setIsSimulating] = useState(false);
-  const [simulationRound, setSimulationRound] = useState(0);
->>>>>>> Stashed changes
 
-  const testAccountsMap = useMemo(() => {
-    const map = new Map<string, TestAccount>();
-    for (const acc of testAccounts) {
-      map.set(acc.id, acc);
-    }
-    return map;
-  }, [testAccounts]);
+  const { isSimulating, simulationRound, handleRunSimulation } = useSimulationState(
+    ballotOptions,
+    submissions,
+    onRunSimulation
+  );
 
-  const ballotOptionsMap = useMemo(() => {
+  const optionsMap = useMemo(() => {
     const map = new Map<string, BallotOption>();
     for (const opt of ballotOptions) {
       map.set(opt.id, opt);
@@ -127,7 +109,6 @@ export function VotingPage({
     return map;
   }, [ballotOptions]);
 
-<<<<<<< Updated upstream
   const optionsMap = useMemo(
     () => new Map(ballotOptions.map(o => [o.id, o])),
     [ballotOptions]
@@ -294,159 +275,10 @@ export function VotingPage({
 
       {/* Ballot Interface */}
       <div className="grid grid-cols-2 gap-6">
-<<<<<<< Updated upstream
         <ConnectedBallotForm
           ballotOptions={ballotOptions}
           onSubmitBallot={onSubmitBallot}
         />
-=======
-        {/* Ballot */}
-        <div className="card p-6">
-          <h2 className="text-lg font-semibold text-primary-200 mb-4 flex items-center gap-2">
-            <Vote className="w-5 h-5" />
-            Ranked-Choice Ballot
-            {rankings.length > 0 && (
-              <span className="badge-success ml-auto">
-                {rankings.length} Ranked
-              </span>
-            )}
-          </h2>
-
-          <p className="text-sm text-primary-400 mb-6">
-            Click rank buttons to order your preferences (1st, 2nd, 3rd...). Lower number = higher preference.
-          </p>
-
-          <div className="space-y-3">
-            {ballotOptions.map(option => {
-              const currentRank = getRank(option.id);
-              return (
-                <div
-                  key={option.id}
-                  className={`card-elevated p-4 transition-all ${
-                    currentRank > 0 ? 'border-accent-500/50 bg-accent-500/10' : ''
-                  }`}
-                >
-                  <div className="flex items-center gap-4">
-                    {/* Rank Controls */}
-                    <div className="flex flex-col gap-1">
-                      <button
-                        onClick={() => handleRank(option.id, currentRank > 0 ? currentRank - 1 || 1 : 1)}
-                        className="w-8 h-6 rounded flex items-center justify-center bg-primary-700 hover:bg-primary-600 text-primary-300 hover:text-primary-100 transition-colors"
-                        disabled={currentRank === 0}
-                      >
-                        <ChevronUp className="w-4 h-4" />
-                      </button>
-                      <div className="w-8 h-8 rounded-lg bg-primary-700 flex items-center justify-center">
-                        <span className={`font-mono font-bold ${currentRank > 0 ? 'text-accent-300' : 'text-primary-500'}`}>
-                          {currentRank || '-'}
-                        </span>
-                      </div>
-                      <button
-                        onClick={() => handleRank(option.id, currentRank + 1)}
-                        className="w-8 h-6 rounded flex items-center justify-center bg-primary-700 hover:bg-primary-600 text-primary-300 hover:text-primary-100 transition-colors"
-                        disabled={currentRank === 0}
-                      >
-                        <ChevronDown className="w-4 h-4" />
-                      </button>
-                    </div>
-
-                    {/* Option Info */}
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="font-semibold text-primary-200">{option.title}</h4>
-                        {option.isWriteIn && <span className="badge-warning">Write-In</span>}
-                      </div>
-                      <p className="text-sm text-primary-400 line-clamp-2">{option.description}</p>
-                      <div className="flex items-center gap-4 mt-2">
-                        <span className="text-xs text-primary-500">
-                          Budget: ${option.budget.toLocaleString()}
-                        </span>
-                        <span className="text-xs text-primary-400 uppercase">{option.category}</span>
-                        {option.writeInCount && (
-                          <span className="text-xs text-success-400">
-                            {option.writeInCount} write-in votes
-                          </span>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Quick Rank Buttons */}
-                    <div className="flex gap-1 flex-wrap justify-end max-w-[200px]">
-                      {[1, 2, 3, 4, 5].map(rank => (
-                        <button
-                          key={rank}
-                          onClick={() => handleRank(option.id, rank)}
-                          className={`w-9 h-9 rounded-lg text-sm font-medium transition-all ${
-                            currentRank === rank
-                              ? 'bg-accent-500 text-white'
-                              : 'bg-primary-700 text-primary-400 hover:bg-primary-600 hover:text-primary-200'
-                          }`}
-                        >
-                          {rank}
-                        </button>
-                      ))}
-                      {currentRank > 0 && (
-                        <button
-                          onClick={() => handleRank(option.id, 0)}
-                          className="w-9 h-9 rounded-lg bg-danger-500/20 text-danger-400 hover:bg-danger-500/30 flex items-center justify-center"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-
-            {/* Write-In Option */}
-            {!showWriteInInput ? (
-              <button
-                onClick={() => setShowWriteInInput(true)}
-                className="w-full card-elevated p-4 border-dashed border-2 border-primary-600 hover:border-accent-500 text-primary-400 hover:text-accent-400 transition-all flex items-center justify-center gap-2"
-              >
-                <Plus className="w-5 h-5" />
-                Add Write-In Candidate
-              </button>
-            ) : (
-              <div className="card-elevated p-4 border-warning-500/50">
-                <div className="flex items-center gap-3">
-                  <input
-                    type="text"
-                    value={writeIn}
-                    onChange={e => setWriteIn(e.target.value)}
-                    className="input flex-1"
-                    placeholder="Enter your write-in candidate name..."
-                    autoFocus
-                  />
-                  <button
-                    onClick={() => {
-                      setShowWriteInInput(false);
-                      setWriteIn('');
-                    }}
-                    className="btn-ghost"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
-                </div>
-                <p className="text-xs text-warning-400 mt-2">
-                  Write-ins repeated by multiple voters become rankable options
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Submit Button */}
-          <button
-            onClick={handleSubmit}
-            disabled={rankings.length === 0}
-            className="btn-success w-full mt-6"
-          >
-            <Check className="w-4 h-4" />
-            Submit Ballot
-          </button>
-        </div>
->>>>>>> Stashed changes
 
         {/* RCV Results / Simulation */}
         <div className="card p-6">
@@ -540,50 +372,11 @@ export function VotingPage({
       </div>
 
       {/* Recent Submissions */}
-      {submissions.length > 0 && (
-        <div className="card p-6">
-          <h2 className="text-lg font-semibold text-primary-200 mb-4 flex items-center justify-between">
-            <span>Recent Ballot Submissions</span>
-            <span className="text-sm text-primary-400">{submissions.length} total</span>
-          </h2>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="text-left text-primary-400 border-b border-primary-700">
-                  <th className="pb-3 font-medium">Voter</th>
-                  <th className="pb-3 font-medium">Rankings</th>
-                  <th className="pb-3 font-medium">Write-In</th>
-                  <th className="pb-3 font-medium">Time</th>
-                </tr>
-              </thead>
-              <tbody className="text-sm">
-                {submissions.slice(-10).reverse().map((sub, idx) => {
-                  const voter = testAccountsMap.get(sub.voterId) ?? accountsMap.get(sub.voterId);
-                  return (
-                    <tr key={idx} className="border-b border-primary-700/50">
-                      <td className="py-3 text-primary-200">
-                        {voter?.name || 'You'}
-                      </td>
-                      <td className="py-3 text-primary-300">
-                        {sub.rankings.sort((a, b) => a.rank - b.rank).map(r => {
-                          const opt = ballotOptionsMap.get(r.optionId) ?? optionsMap.get(r.optionId);
-                          return `${r.rank}: ${opt?.title || 'Unknown'}`;
-                        }).join(' → ')}
-                      </td>
-                      <td className="py-3 text-primary-400">
-                        {sub.writeIn || '-'}
-                      </td>
-                      <td className="py-3 text-primary-500">
-                        {sub.submittedAt.toLocaleTimeString()}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      )}
+      <RCVSubmissions
+        submissions={submissions}
+        accountsMap={accountsMap}
+        optionsMap={optionsMap}
+      />
     </div>
   );
 }

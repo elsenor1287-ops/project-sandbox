@@ -1,7 +1,7 @@
 import { renderHook, act } from '@testing-library/react';
-import { useAppState, calculateRCVResult } from './useAppState';
+import { useAppState, calculateRCVResult, processRCVRound } from './useAppState';
 import { describe, it, expect } from 'vitest';
-import { BallotOption, BallotSubmission, Proposal } from '../types';
+import { BallotOption, BallotSubmission, Proposal, RankedVote } from '../types';
 
 // Note: The strict typing for the Proposal model (replacing 'any' with 'Proposal | undefined' for newProposal) is already resolved in the current working branch.
 
@@ -303,5 +303,65 @@ describe('useAppState Law1', () => {
       const violations = result.current.checkLaw1Violations('If they implement a censorship board...');
       expect(violations).toEqual(['First Amendment Shield: "censor" detected']);
     });
+  });
+});
+
+
+describe('processRCVRound', () => {
+  const options: BallotOption[] = [
+    { id: 'opt1', title: 'Option 1', description: '', budget: 0, category: 'other', voteCount: 0, isWriteIn: false },
+    { id: 'opt2', title: 'Option 2', description: '', budget: 0, category: 'other', voteCount: 0, isWriteIn: false },
+    { id: 'opt3', title: 'Option 3', description: '', budget: 0, category: 'other', voteCount: 0, isWriteIn: false },
+  ];
+
+  it('should declare a winner if an option exceeds the threshold', () => {
+    const rankings: RankedVote[][] = [
+      [{ optionId: 'opt1', rank: 1 }],
+      [{ optionId: 'opt1', rank: 1 }],
+      [{ optionId: 'opt2', rank: 1 }],
+    ];
+
+    const result = processRCVRound(1, options, rankings, 1.5, 3);
+
+    expect(result.winner).toEqual(options[0]);
+    expect(result.round.winner).toBe('opt1');
+    expect(result.round.voteDistribution).toEqual({
+      'opt1': 2,
+      'opt2': 1,
+      'opt3': 0
+    });
+  });
+
+  it('should eliminate the loser and redistribute votes if no winner', () => {
+    const rankings: RankedVote[][] = [
+      [{ optionId: 'opt1', rank: 1 }],
+      [{ optionId: 'opt1', rank: 1 }],
+      [{ optionId: 'opt2', rank: 1 }],
+      [{ optionId: 'opt2', rank: 1 }],
+      [{ optionId: 'opt3', rank: 1 }, { optionId: 'opt2', rank: 2 }],
+    ];
+
+    const result = processRCVRound(1, options, rankings, 2.5, 5);
+
+    expect(result.winner).toBeUndefined();
+    expect(result.round.eliminatedOptionId).toBe('opt3');
+    expect(result.nextOptions).toHaveLength(2);
+    expect(result.nextOptions.map(o => o.id)).not.toContain('opt3');
+
+    expect(result.nextRankings).toEqual([
+      [{ optionId: 'opt1', rank: 1 }],
+      [{ optionId: 'opt1', rank: 1 }],
+      [{ optionId: 'opt2', rank: 1 }],
+      [{ optionId: 'opt2', rank: 1 }],
+      [{ optionId: 'opt2', rank: 2 }],
+    ]);
+  });
+
+  it('should handle edge cases where rankings are empty or options are empty', () => {
+    const result = processRCVRound(1, [], [], 0, 0);
+    expect(result.winner).toBeUndefined();
+    expect(result.nextOptions).toHaveLength(0);
+    expect(result.nextRankings).toHaveLength(0);
+    expect(result.round.eliminatedOptionId).toBeUndefined();
   });
 });

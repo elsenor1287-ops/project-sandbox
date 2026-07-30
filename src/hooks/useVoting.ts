@@ -32,22 +32,20 @@ export function processRCVRound(
     }
   });
 
-  let maxVotes = -Infinity;
-  let minVotes = Infinity;
-  let winnerId: string | undefined;
-  let loserId: string | undefined;
-
-  for (const id in voteDistribution) {
-    const votes = voteDistribution[id];
-    if (votes > maxVotes) {
-      maxVotes = votes;
-      winnerId = id;
+  const { maxVotes, minVotes, winnerId, loserId } = Object.entries(voteDistribution).reduce(
+    (acc, [id, votes]) => ({
+      maxVotes: votes > acc.maxVotes ? votes : acc.maxVotes,
+      winnerId: votes > acc.maxVotes ? id : acc.winnerId,
+      minVotes: votes < acc.minVotes ? votes : acc.minVotes,
+      loserId: votes < acc.minVotes ? id : acc.loserId,
+    }),
+    {
+      maxVotes: -Infinity,
+      minVotes: Infinity,
+      winnerId: undefined as string | undefined,
+      loserId: undefined as string | undefined,
     }
-    if (votes < minVotes) {
-      minVotes = votes;
-      loserId = id;
-    }
-  }
+  );
 
   // Check for winner
   if (maxVotes > threshold) {
@@ -70,7 +68,7 @@ export function processRCVRound(
   const nextOptions = currentOptions.filter(opt => opt.id !== loserId);
 
   // Optimization: Create a Set of current option IDs for O(1) lookup
-  const currentOptionIds = new Set(nextOptions.map(opt => opt.id));
+  const currentOptionIds = nextOptions.reduce((set, opt) => set.add(opt.id), new Set<string>());
 
   // Redistribute votes
   const nextRankings = currentRankings.map(rankings =>
@@ -97,7 +95,6 @@ export function calculateRCVResult(
   const rounds: RCVRound[] = [];
   let currentOptions = [...options];
   let currentRankings = submissions.map(sub => [...sub.rankings].sort((a, b) => a.rank - b.rank));
-  let activeOptionIds = new Set(options.map(opt => opt.id));
 
   const totalVotes = submissions.length;
   const threshold = totalVotes * MAJORITY_THRESHOLD_RATIO;
@@ -123,8 +120,8 @@ export function calculateRCVResult(
   }
 
   if (!winner) {
-    const remainingIds = Array.from(new Set(currentOptions.map(opt => opt.id)));
-    winner = options.find(opt => opt.id === remainingIds[0]) || options[0];
+    const remainingId = currentOptions[0]?.id;
+    winner = options.find(opt => opt.id === remainingId) || options[0];
   }
 
   return {

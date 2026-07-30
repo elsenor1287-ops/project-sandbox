@@ -3,7 +3,10 @@ import type { Dispatch, SetStateAction } from 'react';
 import type { AppState, Proposal } from '../types';
 import { PROTOCOL_RULES } from '../data/mockData';
 
-const LAW1_RULES = PROTOCOL_RULES.filter(rule => rule.law === 1);
+const LAW1_RULES = PROTOCOL_RULES.filter(rule => rule.law === 1).map(rule => ({
+  ...rule,
+  lowerKeywords: (rule as any).lowerKeywords || rule.keywords.map(k => k.toLowerCase())
+}));
 
 export function useProposals(setState: Dispatch<SetStateAction<AppState>>) {
   const checkLaw1Violations = useCallback((content: string): string[] => {
@@ -12,7 +15,7 @@ export function useProposals(setState: Dispatch<SetStateAction<AppState>>) {
 
     LAW1_RULES.forEach(rule => {
       // Memory note: pre-existing issue where lowerKeywords is missing from some ProtocolRules
-      const keywords = (rule as any).lowerKeywords || rule.keywords.map(k => k.toLowerCase());
+      const keywords = rule.lowerKeywords;
       keywords.forEach((lowerKeyword: string, index: number) => {
         if (lowerContent.includes(lowerKeyword)) {
           violations.push(`${rule.name}: "${rule.keywords[index]}" detected`);

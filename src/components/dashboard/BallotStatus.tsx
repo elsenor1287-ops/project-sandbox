@@ -18,18 +18,13 @@ export function BallotStatus({
   // Note: The performance optimization for voteCounts is already implemented.
   // It uses useMemo to pre-compute counts, avoiding nested O(N*M) array filtering.
   const voteCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    for (let i = 0; i < ballotSubmissions.length; i++) {
-      const rankings = ballotSubmissions[i].rankings;
-      for (let j = 0; j < rankings.length; j++) {
-        if (rankings[j].rank === 1) {
-          const optId = rankings[j].optionId;
-          counts[optId] = (counts[optId] || 0) + 1;
-          break;
-        }
+    return ballotSubmissions.reduce<Record<string, number>>((counts, submission) => {
+      const firstChoice = submission.rankings.find((r) => r.rank === 1);
+      if (firstChoice) {
+        counts[firstChoice.optionId] = (counts[firstChoice.optionId] || 0) + 1;
       }
-    }
-    return counts;
+      return counts;
+    }, {});
   }, [ballotSubmissions]);
 
 =======
