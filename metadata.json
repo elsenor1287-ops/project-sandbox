@@ -1,0 +1,6 @@
+{
+  "name": "Project Sandbox",
+  "description": "A decentralized digital localism governance engine with RCV voting and self-sovereign identity",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

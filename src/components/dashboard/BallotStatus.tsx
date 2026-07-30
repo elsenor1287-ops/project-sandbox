@@ -1,4 +1,3 @@
-import { useMemo } from 'react';
 import { BarChart3, ArrowRight, CheckCircle2, Vote } from 'lucide-react';
 import type { AppState } from '../../types';
 
@@ -15,6 +14,7 @@ export function BallotStatus({
   ballotSubmissions,
   onNavigate,
 }: BallotStatusProps) {
+<<<<<<< Updated upstream
   // Note: The performance optimization for voteCounts is already implemented.
   // It uses useMemo to pre-compute counts, avoiding nested O(N*M) array filtering.
   const voteCounts = useMemo(() => {
@@ -32,6 +32,8 @@ export function BallotStatus({
     return counts;
   }, [ballotSubmissions]);
 
+=======
+>>>>>>> Stashed changes
   return (
     <div className="card p-6 col-span-2">
       <div className="flex items-center justify-between mb-4">
@@ -74,7 +76,9 @@ export function BallotStatus({
 
       <div className="grid grid-cols-2 gap-4">
         {ballotOptions.slice(0, 4).map(option => {
-          const voteCount = voteCounts[option.id] || 0;
+          const voteCount = ballotSubmissions.filter(sub =>
+            sub.rankings.some(r => r.optionId === option.id && r.rank === 1)
+          ).length;
           const percentage =
             ballotSubmissions.length > 0
               ? (voteCount / ballotSubmissions.length) * 100

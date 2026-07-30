@@ -90,7 +90,9 @@ export function DashboardStats({
           ${ballotOptions.reduce((sum, o) => sum + o.budget, 0).toLocaleString()}
         </p>
         <p className="text-sm text-primary-400 mt-1">Total Budget in Ballot</p>
-        <p className="text-xs text-primary-500 mt-2">6 initiatives proposed</p>
+        <p className="text-xs text-primary-500 mt-2">
+          {ballotOptions.length} initiatives proposed
+        </p>
       </div>
     </div>
   );

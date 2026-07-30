@@ -1,5 +1,8 @@
-import { LayoutDashboard, Fingerprint, Vote, Code2, Shield, Activity } from 'lucide-react';
+import { useState } from 'react';
+import { LayoutDashboard, Fingerprint, Vote, Code2, Shield, Activity, Database } from 'lucide-react';
 import type { PageRoute } from '../types';
+import { DatabaseStatusModal } from './DatabaseStatusModal';
+import { isSupabaseConfigured } from '../lib/supabase';
 
 interface SidebarProps {
   currentPage: PageRoute;
@@ -80,21 +83,42 @@ export function Sidebar({ currentPage, onNavigate, identityStatus }: SidebarProp
 }
 
 export function Header() {
+  const [isDbModalOpen, setIsDbModalOpen] = useState(false);
+
   return (
     <header className="h-16 bg-primary-900/50 backdrop-blur-xl border-b border-primary-700/50 flex items-center justify-between px-6">
       <div>
         <h2 className="text-sm text-primary-400">Welcome back, Citizen</h2>
         <p className="text-xs text-primary-500">CITIZEN-2024-01337</p>
       </div>
-      <div className="flex items-center gap-4">
-        <div className="text-right">
-          <p className="text-sm text-primary-300">Monthly Cycle Active</p>
-          <p className="text-xs text-primary-500">Feb 1 - Feb 28, 2024</p>
-        </div>
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent-600 to-accent-400 flex items-center justify-center text-white font-medium">
-          C
+      <div className="flex items-center gap-6">
+        {/* DB Sync Control */}
+        <button
+          onClick={() => setIsDbModalOpen(true)}
+          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl border text-xs font-semibold cursor-pointer select-none transition-all duration-300 ${
+            isSupabaseConfigured
+              ? 'bg-success-500/10 hover:bg-success-500/20 border-success-500/30 text-success-400'
+              : 'bg-primary-800/80 hover:bg-primary-700 border-primary-700 text-primary-300'
+          }`}
+          title="Manage Supabase Sync"
+        >
+          <Database className="w-3.5 h-3.5" />
+          <span>DB Sync</span>
+          <span className={`w-1.5 h-1.5 rounded-full ${isSupabaseConfigured ? 'bg-success-400 animate-pulse' : 'bg-primary-500'}`} />
+        </button>
+
+        <div className="flex items-center gap-4">
+          <div className="text-right">
+            <p className="text-sm text-primary-300">Monthly Cycle Active</p>
+            <p className="text-xs text-primary-500">Feb 1 - Feb 28, 2024</p>
+          </div>
+          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-accent-600 to-accent-400 flex items-center justify-center text-white font-medium">
+            C
+          </div>
         </div>
       </div>
+
+      <DatabaseStatusModal isOpen={isDbModalOpen} onClose={() => setIsDbModalOpen(false)} />
     </header>
   );
 }
