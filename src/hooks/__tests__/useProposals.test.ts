@@ -1,15 +1,16 @@
+import type { AppState, Proposal } from '../../types';
 import { renderHook, act } from '@testing-library/react';
 import { useProposals } from '../useProposals';
 import { vi, describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';
 
 describe('useProposals', () => {
   const mockSetState = vi.fn();
-  let currentState: any;
+  let currentState: AppState;
 
   beforeEach(() => {
-    currentState = { proposals: [{ id: 'existing-1', title: 'Existing' }] };
+    currentState = { proposals: [{ id: 'existing-1', title: 'Existing' } as Proposal] } as AppState;
     mockSetState.mockClear();
-    mockSetState.mockImplementation((updater: any) => {
+    mockSetState.mockImplementation((updater: AppState | ((prev: AppState) => AppState)) => {
       currentState = typeof updater === 'function' ? updater(currentState) : updater;
     });
   });
@@ -133,7 +134,7 @@ describe('useProposals', () => {
     it('should create a compiled proposal when no violations exist', () => {
       const { result } = renderHook(() => useProposals(mockSetState));
 
-      let newProposal: any;
+      let newProposal: Proposal | undefined;
       act(() => {
         newProposal = result.current.submitProposal({
           title: 'New Park',
@@ -164,7 +165,7 @@ describe('useProposals', () => {
     it('should create a vetoed proposal when violations are detected', () => {
       const { result } = renderHook(() => useProposals(mockSetState));
 
-      let newProposal: any;
+      let newProposal: Proposal | undefined;
       act(() => {
         newProposal = result.current.submitProposal({
           title: 'Bad Law',
