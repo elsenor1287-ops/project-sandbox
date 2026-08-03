@@ -8,20 +8,26 @@ const LAW1_RULES = PROTOCOL_RULES.filter(rule => rule.law === 1).map(rule => ({
   lowerKeywords: (rule as any).lowerKeywords || rule.keywords.map(k => k.toLowerCase())
 }));
 
+// Flattened keyword mappings for fast iteration
+// This avoids O(N*M) nested loops by making a single O(1) flattened list.
+const ALL_KEYWORDS_FLAT = LAW1_RULES.flatMap(rule =>
+  rule.lowerKeywords.map((lowerKeyword: string, index: number) => ({
+    keyword: lowerKeyword,
+    message: `${rule.name}: "${rule.keywords[index]}" detected`
+  }))
+);
+
 export function useProposals(setState: Dispatch<SetStateAction<AppState>>) {
   const checkLaw1Violations = useCallback((content: string): string[] => {
     const violations: string[] = [];
     const lowerContent = content.toLowerCase();
 
-    LAW1_RULES.forEach(rule => {
-      // Memory note: pre-existing issue where lowerKeywords is missing from some ProtocolRules
-      const keywords = rule.lowerKeywords;
-      keywords.forEach((lowerKeyword: string, index: number) => {
-        if (lowerContent.includes(lowerKeyword)) {
-          violations.push(`${rule.name}: "${rule.keywords[index]}" detected`);
-        }
-      });
-    });
+    // Iterate the flattened list O(K) where K is total number of keywords
+    for (let i = 0; i < ALL_KEYWORDS_FLAT.length; i++) {
+      if (lowerContent.includes(ALL_KEYWORDS_FLAT[i].keyword)) {
+        violations.push(ALL_KEYWORDS_FLAT[i].message);
+      }
+    }
 
     return violations;
   }, []);
