@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import type { BallotOption, BallotSubmission } from '../types';
-import { calculateRCVResult } from './useAppState';
+import { calculateRCVResult } from './useVoting';
 
 export interface RankedItem {
   optionId: string;
