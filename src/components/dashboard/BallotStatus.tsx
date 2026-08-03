@@ -14,7 +14,6 @@ export function BallotStatus({
   ballotSubmissions,
   onNavigate,
 }: BallotStatusProps) {
-<<<<<<< Updated upstream
   // Note: The performance optimization for voteCounts is already implemented.
   // It uses useMemo to pre-compute counts, avoiding nested O(N*M) array filtering.
   const voteCounts = useMemo(() => {
@@ -27,8 +26,6 @@ export function BallotStatus({
     }, {});
   }, [ballotSubmissions]);
 
-=======
->>>>>>> Stashed changes
   return (
     <div className="card p-6 col-span-2">
       <div className="flex items-center justify-between mb-4">

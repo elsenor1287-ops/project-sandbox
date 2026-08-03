@@ -92,81 +92,13 @@ export function VotingPage({
   const percentage = (cumulativeCost / BUDGET_CAP) * 100;
   const barWidth = Math.min(percentage, 100);
 
-  const [writeIn, setWriteIn] = useState('');
-  const [showWriteInInput, setShowWriteInInput] = useState(false);
+
 
   const { isSimulating, simulationRound, handleRunSimulation } = useSimulationState(
     ballotOptions,
     submissions,
     onRunSimulation
   );
-
-  const optionsMap = useMemo(() => {
-    const map = new Map<string, BallotOption>();
-    for (const opt of ballotOptions) {
-      map.set(opt.id, opt);
-    }
-    return map;
-  }, [ballotOptions]);
-
-  const optionsMap = useMemo(
-    () => new Map(ballotOptions.map(o => [o.id, o])),
-    [ballotOptions]
-  );
-  const accountsMap = useMemo(
-    () => new Map(testAccounts.map(a => [a.id, a])),
-    [testAccounts]
-  );
-
-
-
-=======
-  const handleSubmit = () => {
-    onSubmitBallot({
-      voterId: 'CITIZEN-2024-01337',
-      rankings: rankings.map(r => ({ optionId: r.optionId, rank: r.rank })),
-      writeIn: writeIn || undefined,
-    });
-    setRankings([]);
-    setWriteIn('');
-    setShowWriteInInput(false);
-  };
-
-  const handleRank = (optionId: string, newRank: number) => {
-    setRankings(prev => {
-      const existing = prev.find(r => r.optionId === optionId);
-      if (existing) {
-        if (newRank === 0) {
-          return prev.filter(r => r.optionId !== optionId);
-        }
-        // Shift others down
-        const others = prev.filter(r => r.optionId !== optionId);
-        const shifted = others.map(r => ({
-          ...r,
-          rank: r.rank >= newRank ? r.rank + 1 : r.rank,
-        }));
-        return [...shifted, { optionId, rank: newRank }].sort((a, b) => a.rank - b.rank);
-      }
-      return [...prev, { optionId, rank: newRank }].sort((a, b) => a.rank - b.rank);
-    });
-  };
-
-  const getRank = (optionId: string) => rankings.find(r => r.optionId === optionId)?.rank || 0;
-
-  const handleRunSimulation = async () => {
-    setIsSimulating(true);
-    setSimulationRound(0);
-    onRunSimulation();
-
-    // Animate through rounds
-    const result = calculateRCVResult(ballotOptions, submissions);
-    for (let i = 0; i < result.rounds.length; i++) {
-      await new Promise(r => setTimeout(r, 1000));
-      setSimulationRound(i + 1);
-    }
-    setIsSimulating(false);
-  };
->>>>>>> Stashed changes
 
   const votedCount = submissions.length;
   const totalVoters = testAccounts.length + 1;
@@ -176,6 +108,7 @@ export function VotingPage({
     () => new Map(ballotOptions.map(o => [o.id, o])),
     [ballotOptions]
   );
+
   const accountsMap = useMemo(
     () => new Map(testAccounts.map(a => [a.id, a])),
     [testAccounts]
@@ -381,54 +314,3 @@ export function VotingPage({
   );
 }
 
-// RCV Calculation function for simulation
-function calculateRCVResult(
-  options: BallotOption[],
-  submissions: BallotSubmission[]
-): RCVResult {
-  const rounds: { roundNumber: number; eliminatedOptionId?: string; voteDistribution: Record<string, number>; threshold: number; winner?: string; totalVotes: number }[] = [];
-  let currentOptions = [...options];
-  let currentRankings = submissions.map(sub => [...sub.rankings].sort((a, b) => a.rank - b.rank));
-
-  const totalVotes = submissions.length;
-  const threshold = totalVotes / 2;
-
-  let roundNumber = 0;
-  let winner: BallotOption | undefined;
-
-  while (!winner && currentOptions.length > 1 && roundNumber < 10) {
-    roundNumber++;
-
-    const voteDistribution: Record<string, number> = {};
-    currentOptions.forEach(opt => voteDistribution[opt.id] = 0);
-
-    currentRankings.forEach(rankings => {
-      const firstChoice = rankings[0];
-      if (firstChoice && Object.prototype.hasOwnProperty.call(voteDistribution, firstChoice.optionId)) {
-        voteDistribution[firstChoice.optionId]++;
-      }
-    });
-
-    const maxVotes = Math.max(...Object.values(voteDistribution));
-    if (maxVotes > threshold) {
-      const winnerId = Object.keys(voteDistribution).find(id => voteDistribution[id] === maxVotes);
-      winner = currentOptions.find(opt => opt.id === winnerId);
-      rounds.push({ roundNumber, voteDistribution, threshold, winner: winnerId, totalVotes });
-      break;
-    }
-
-    const minVotes = Math.min(...Object.values(voteDistribution));
-    const loserId = Object.keys(voteDistribution).find(id => voteDistribution[id] === minVotes)!;
-
-    currentOptions = currentOptions.filter(opt => opt.id !== loserId);
-    currentRankings = currentRankings.map(rankings =>
-      rankings.filter(r => currentOptions.some(opt => opt.id === r.optionId))
-    );
-
-    rounds.push({ roundNumber, eliminatedOptionId: loserId, voteDistribution, threshold, totalVotes });
-  }
-
-  if (!winner) winner = currentOptions[0];
-
-  return { rounds, winner: winner!, totalVotes, completedAt: new Date() };
-}
