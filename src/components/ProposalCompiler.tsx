@@ -66,59 +66,38 @@ const LAW1_VIOLATION_KEYWORDS = [
   "unequal treatment"
 ];
 
+const escapeRegExp = (string: string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const LAW1_VIOLATION_REGEX = new RegExp(
+  LAW1_VIOLATION_KEYWORDS
+    .slice()
+    .sort((a, b) => b.length - a.length)
+    .map(escapeRegExp)
+    .join('|'),
+  'gi'
+);
+
 function parseContent(text: string): Segment[] {
   if (!text) return [];
 
-  const matches: { start: number; end: number; keyword: string }[] = [];
-  const lowerText = text.toLowerCase();
-
-  LAW1_VIOLATION_KEYWORDS.forEach(kw => {
-    let index = lowerText.indexOf(kw.toLowerCase());
-    while (index !== -1) {
-      matches.push({
-        start: index,
-        end: index + kw.length,
-        keyword: text.substring(index, index + kw.length),
-      });
-      index = lowerText.indexOf(kw.toLowerCase(), index + 1);
-    }
-  });
-
-  // Sort matches by start index, then by length descending
-  matches.sort((a, b) => {
-    if (a.start !== b.start) {
-      return a.start - b.start;
-    }
-    return (b.end - b.start) - (a.end - a.start);
-  });
-
-  // Filter out overlapping matches
-  const nonOverlappingMatches: typeof matches = [];
-  let lastEnd = 0;
-  for (const match of matches) {
-    if (match.start >= lastEnd) {
-      nonOverlappingMatches.push(match);
-      lastEnd = match.end;
-    }
-  }
-
-  // Build segments
   const segments: Segment[] = [];
   let currentIndex = 0;
-  for (const match of nonOverlappingMatches) {
-    if (match.start > currentIndex) {
+
+  for (const match of text.matchAll(LAW1_VIOLATION_REGEX)) {
+    if (match.index !== undefined) {
+      if (match.index > currentIndex) {
+        segments.push({
+          text: text.substring(currentIndex, match.index),
+          isViolation: false,
+          keywordMatched: "",
+        });
+      }
       segments.push({
-        text: text.substring(currentIndex, match.start),
-        isViolation: false,
-        keywordMatched: "",
+        text: match[0],
+        isViolation: true,
+        keywordMatched: match[0],
       });
+      currentIndex = match.index + match[0].length;
     }
-    segments.push({
-      text: text.substring(match.start, match.end),
-      isViolation: true,
-      keywordMatched: match.keyword,
-    });
-    currentIndex = match.end;
   }
 
   if (currentIndex < text.length) {
