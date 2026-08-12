@@ -20,7 +20,8 @@ export const highlightViolations = (text: string, violations: string[]) => {
 
   if (keywords.length === 0) return <>{text}</>;
 
-  const regex = new RegExp(`(${keywords.join('|')})`, 'gi');
+  const escapedKeywords = keywords.map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+  const regex = new RegExp(`(${escapedKeywords.join('|')})`, 'gi');
   const parts = text.split(regex);
 
   return (
