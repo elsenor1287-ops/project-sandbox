@@ -1,5 +1,3 @@
-<<<<<<< Updated upstream
-=======
 import {
   Fingerprint,
   FileText,
@@ -11,7 +9,6 @@ import {
   Scan,
   RefreshCw,
 } from 'lucide-react';
->>>>>>> Stashed changes
 import React from 'react';
 import type { IdentityState, VerificationStep } from '../types';
 import { FraudTestingPanel } from './identity/FraudTestingPanel';
@@ -31,10 +28,14 @@ interface IdentityPageProps {
 export function IdentityPage({
   identity,
   onCompleteStep,
+  onTriggerFraud,
+  onFreezeAccount,
+  onResetIdentity,
 }: IdentityPageProps) {
   const [isScanning, setIsScanning] = React.useState(false);
   const [isVouched, setIsVouched] = React.useState(false);
   const [isVouchingInProgress, setIsVouchingInProgress] = React.useState(false);
+  const [showFraudPanel, setShowFraudPanel] = React.useState(false);
 
   const handleVerifyNeighbor = async () => {
     setIsVouchingInProgress(true);
@@ -53,7 +54,6 @@ export function IdentityPage({
   return (
     <div className="p-8 space-y-8">
       {/* Header */}
-<<<<<<< Updated upstream
       <IdentityPageHeader
         showFraudPanel={showFraudPanel}
         onToggleFraudPanel={() => setShowFraudPanel(!showFraudPanel)}
@@ -68,13 +68,6 @@ export function IdentityPage({
           onResetIdentity={onResetIdentity}
         />
       )}
-=======
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gradient">Identity Wallet</h1>
-          <p className="text-primary-400 mt-1">Self-sovereign credential verification</p>
-        </div>
-      </div>
 
       {/* Active Vouch Requests Tray */}
       <div className="card p-6 bg-primary-900/40 border border-primary-800 shadow-lg">
@@ -125,7 +118,6 @@ export function IdentityPage({
           </div>
         </div>
       </div>
->>>>>>> Stashed changes
 
       {/* Status Card */}
       <IdentityStatusCard identity={identity} />
