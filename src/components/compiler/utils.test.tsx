@@ -43,3 +43,19 @@ describe('getTierInfo', () => {
     });
   });
 });
+
+import { highlightViolations } from './utils';
+
+describe('highlightViolations', () => {
+  it('handles regex special characters properly', () => {
+    const text = 'Hello + world! (test)';
+    const violations = ['violation "+" found', 'violation "(test)" found'];
+    const result = highlightViolations(text, violations);
+
+    // Result should be a fragment containing 5 parts (due to splitting)
+    // "Hello ", "+", " world! ", "(test)", ""
+    expect(result.props.children).toHaveLength(5);
+    expect(result.props.children[1].props.children).toBe('+');
+    expect(result.props.children[3].props.children).toBe('(test)');
+  });
+});
