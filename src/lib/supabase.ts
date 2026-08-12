@@ -45,14 +45,14 @@ ALTER TABLE ballot_submissions ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow public read access to proposals" ON proposals
   FOR SELECT USING (true);
 
-CREATE POLICY "Allow public write access to proposals" ON proposals
-  FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow authenticated write access to proposals" ON proposals
+  FOR INSERT TO authenticated WITH CHECK (true);
 
 CREATE POLICY "Allow public read access to submissions" ON ballot_submissions
   FOR SELECT USING (true);
 
-CREATE POLICY "Allow public write access to submissions" ON ballot_submissions
-  FOR INSERT WITH CHECK (true);
+CREATE POLICY "Allow authenticated write access to submissions" ON ballot_submissions
+  FOR INSERT TO authenticated WITH CHECK (true);
 `;
 
 export async function dbFetchProposals(): Promise<Proposal[] | null> {
