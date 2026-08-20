@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Proposal, BallotSubmission } from '../types';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://offsicarzljenjrzfant.supabase.co';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
 // Supabase client initialization. Note that the client won't work correctly
@@ -12,7 +12,7 @@ export const isSupabaseConfigured = Boolean(
   supabaseAnonKey !== 'your_supabase_anon_key'
 );
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey || 'dummy-key');
+export const supabase = createClient(supabaseUrl || 'https://placeholder.supabase.co', supabaseAnonKey || 'dummy-key');
 
 export const SUPABASE_SQL_SETUP = `-- Supabase SQL Setup for Project Sandbox
 -- Copy and run this script in your Supabase SQL Editor to set up the necessary tables!
