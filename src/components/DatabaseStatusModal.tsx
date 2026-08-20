@@ -198,7 +198,7 @@ export function DatabaseStatusModal({ isOpen, onClose }: DatabaseStatusModalProp
             </div>
             
             <p className="text-xs text-primary-400">
-              Paste this command into your <a href="https://supabase.com/dashboard" target="_blank" rel="noreferrer" className="text-accent-400 hover:underline inline-flex items-center gap-0.5 font-semibold">Supabase SQL Editor <ExternalLink className="w-3 h-3" /></a> to instantly create the correct tables and enable real-time read/write permissions.
+              Paste this command into your <a href="https://supabase.com/dashboard" target="_blank" rel="noopener noreferrer" className="text-accent-400 hover:underline inline-flex items-center gap-0.5 font-semibold">Supabase SQL Editor <ExternalLink className="w-3 h-3" /></a> to instantly create the correct tables and enable real-time read/write permissions.
             </p>
 
             <div className="relative">
