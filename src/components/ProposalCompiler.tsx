@@ -1,11 +1,6 @@
 import { useState, useRef, useMemo, useEffect } from 'react';
 import {
-  Code2,
   Shield,
-  ShieldAlert,
-  CheckCircle2,
-  XCircle,
-  Send,
   FileCode,
   Lock,
   Unlock,
