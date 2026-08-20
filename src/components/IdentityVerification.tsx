@@ -1,12 +1,7 @@
 import {
-  Fingerprint,
-  FileText,
   Users,
   CheckCircle2,
   Shield,
-  ShieldAlert,
-  ShieldX,
-  Scan,
   RefreshCw,
 } from 'lucide-react';
 import React from 'react';
